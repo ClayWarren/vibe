@@ -1,41 +1,47 @@
 import type { IRNode } from '../ir/index.js';
+import { rustRuntimeImport } from './runtime-import.js';
 
 export function emitRust(node: IRNode, indent = 0): string {
+  const header = rustRuntimeImport();
+  return `${header}\n${emitRustNode(node, indent)}`;
+}
+
+function emitRustNode(node: IRNode, indent = 0): string {
   const pad = '  '.repeat(indent);
   switch (node.kind) {
     case 'IRProgram':
-      return node.body.map((n) => emitRust(n, indent)).join('\n');
+      return node.body.map((n) => emitRustNode(n, indent)).join('\n');
     case 'IRLet':
-      return `${pad}let ${node.name} = ${emitRust(node.value, indent)};`;
+      return `${pad}let ${node.name} = ${emitRustNode(node.value, indent)};`;
     case 'IRReturn':
-      return `${pad}return ${node.value ? emitRust(node.value, indent) : '()'};`;
+      return `${pad}return ${node.value ? emitRustNode(node.value, indent) : '()'};`;
     case 'IRStop':
-      return `${pad}return Err(anyhow::anyhow!(${emitRust(node.value, indent)}));`;
+      return `${pad}return Err(anyhow::anyhow!(${emitRustNode(node.value, indent)}));`;
     case 'IRIf': {
-      const thenPart = node.then.map((n) => emitRust(n, indent + 1)).join('\n');
-      const elsePart = node.otherwise?.map((n) => emitRust(n, indent + 1)).join('\n');
+      const thenPart = node.then.map((n) => emitRustNode(n, indent + 1)).join('\n');
+      const elsePart = node.otherwise?.map((n) => emitRustNode(n, indent + 1)).join('\n');
       const elseBlock = elsePart ? `\n${pad}} else {\n${elsePart}\n${pad}}` : '';
-      return `${pad}if ${emitRust(node.condition, indent)} {\n${thenPart}\n${pad}}${elseBlock}`;
+      return `${pad}if ${emitRustNode(node.condition, indent)} {\n${thenPart}\n${pad}}${elseBlock}`;
     }
     case 'IRForEach': {
-      const body = node.body.map((n) => emitRust(n, indent + 1)).join('\n');
-      return `${pad}for ${node.item} in ${emitRust(node.collection, indent)} {\n${body}\n${pad}}`;
+      const body = node.body.map((n) => emitRustNode(n, indent + 1)).join('\n');
+      return `${pad}for ${node.item} in ${emitRustNode(node.collection, indent)} {\n${body}\n${pad}}`;
     }
     case 'IRRepeat': {
-      const body = node.body.map((n) => emitRust(n, indent + 1)).join('\n');
-      const times = emitRust(node.times, indent);
+      const body = node.body.map((n) => emitRustNode(n, indent + 1)).join('\n');
+      const times = emitRustNode(node.times, indent);
       return `${pad}for _i in 0..${times} {\n${body}\n${pad}}`;
     }
     case 'IRCall':
-      return `${pad}${node.callee}(${node.args.map((a) => emitRust(a, indent)).join(', ')})`;
+      return `${pad}${node.callee}(${node.args.map((a) => emitRustNode(a, indent)).join(', ')})`;
     case 'IRFetch':
       return `${pad}runtime::fetch(${JSON.stringify(node.target)}, ${node.qualifier ? JSON.stringify(node.qualifier) : 'None'})`;
     case 'IREnsure':
-      return `${pad}runtime::${node.op}(${emitRust(node.condition, indent)});`;
+      return `${pad}runtime::${node.op}(${emitRustNode(node.condition, indent)});`;
     case 'IRSend':
-      return `${pad}runtime::send(${emitRust(node.payload, indent)}${node.target ? `, ${emitRust(node.target, indent)}` : ''});`;
+      return `${pad}runtime::send(${emitRustNode(node.payload, indent)}${node.target ? `, ${emitRustNode(node.target, indent)}` : ''});`;
     case 'IRStore':
-      return `${pad}runtime::store(${emitRust(node.value, indent)}${node.target ? `, Some(${JSON.stringify(node.target)})` : ', None'});`;
+      return `${pad}runtime::store(${emitRustNode(node.value, indent)}${node.target ? `, Some(${JSON.stringify(node.target)})` : ', None'});`;
     case 'IRLiteral':
       if (typeof node.value === 'string') return `${JSON.stringify(node.value)}.to_string()`;
       if (node.value === null) return 'None';
@@ -44,7 +50,7 @@ export function emitRust(node: IRNode, indent = 0): string {
     case 'IRIdentifier':
       return node.name;
     case 'IRBinary':
-      return `${emitRust(node.left, indent)} ${rsOp(node.op)} ${emitRust(node.right, indent)}`;
+      return `${emitRustNode(node.left, indent)} ${rsOp(node.op)} ${emitRustNode(node.right, indent)}`;
     default:
       throw new Error(`Unhandled IR node ${(node as IRNode).kind}`);
   }

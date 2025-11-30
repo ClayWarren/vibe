@@ -1,4 +1,5 @@
 import type { IRNode } from '../ir/index.js';
+import { tsRuntimeImport } from './runtime-import.js';
 
 type EmitOptions = { withMap?: boolean };
 type MapEntry = { out: number; src?: { line: number; column: number } };
@@ -9,8 +10,9 @@ export function emitTypeScript(
   indent = 0,
   state: { line: number; map: MapEntry[] } = { line: 1, map: [] }
 ): { code: string; map: MapEntry[] } {
-  const code = emitNode(node, indent, state, options.withMap === true);
-  return { code, map: state.map };
+  const body = emitNode(node, indent, state, options.withMap === true);
+  const header = tsRuntimeImport();
+  return { code: `${header}\n${body}`, map: state.map };
 }
 
 // Backward-compat helper
