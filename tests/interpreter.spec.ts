@@ -21,6 +21,10 @@ when http POST /ensure:
   ensure body.ok.
   return "ok".
 end.
+
+define ping:
+  return "pong".
+end.
 `);
 
 describe('interpreter', () => {
@@ -96,6 +100,19 @@ end.`
   it('executes else branch when condition false', async () => {
     const ast = parse('when http GET /cond:\n  if false:\n    return 1.\n  else:\n    return 2.\n  end.\nend.');
     const res = await runEvent(ast, 'http GET /cond', {} as any);
+    expect(res.body).toBe(2);
+  });
+
+  it('calls user-defined function', async () => {
+    const res = await runEvent(program, 'http GET /ping', { data: {} } as any);
+    expect(res.body).toBe('pong');
+  });
+
+  it('lexical scope shadows', async () => {
+    const ast = parse(
+      `when http GET /shadow:\n  let x = 1.\n  if true:\n    let x = 2.\n    return x.\n  end.\n  return x.\nend.`
+    );
+    const res = await runEvent(ast, 'http GET /shadow', {} as any);
     expect(res.body).toBe(2);
   });
 });

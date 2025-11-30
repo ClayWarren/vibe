@@ -1,14 +1,15 @@
 import { tokenize } from '../tokenizer/index.js';
-import type { Token, TokenType } from '../tokenizer/index.js';
 import type {
   Program,
   Statement,
   Expression,
   Identifier,
-  Block,
   Literal,
   BinaryOperator,
+  BinaryExpression,
+  Block,
 } from '../types/ast.js';
+import type { Token } from '../tokenizer/types.js';
 
 export class Parser {
   private tokens: Token[] = [];
@@ -29,22 +30,24 @@ export class Parser {
 
   private statement(): Statement {
     this.skipTrivia();
-    if (this.matchKeyword('use')) return this.useStatement();
     if (this.matchKeyword('let')) return this.letStatement();
+    if (this.matchKeyword('use')) return this.useStatement();
     if (this.matchKeyword('define')) return this.functionDef();
+    if (this.matchKeyword('every')) return this.scheduleHandler();
     if (this.matchKeyword('when')) return this.eventHandler();
     if (this.matchKeyword('if')) return this.ifStatement();
     if (this.matchKeyword('for')) return this.forEachStatement();
     if (this.matchKeyword('repeat')) return this.repeatStatement();
     if (this.matchKeyword('return')) return this.returnStatement();
     if (this.matchKeyword('stop')) return this.stopStatement();
+    if (this.matchKeyword('call')) return this.callStatement();
     if (this.matchKeyword('send')) return this.sendStatement();
     if (this.matchKeyword('store')) return this.storeStatement();
-    if (this.matchKeyword('get')) return this.fetchStatementAsExpression();
-    if (this.matchKeyword('call')) return this.callStatement();
     if (this.matchKeyword('ensure')) return this.ensureLike('EnsureExpression');
     if (this.matchKeyword('validate')) return this.ensureLike('ValidateExpression');
     if (this.matchKeyword('expect')) return this.ensureLike('ExpectExpression');
+    // imports
+    if (this.matchKeyword('import')) return this.importStmt();
     // fallback expression statement
     const expr = this.expression();
     this.consume('dot');
@@ -61,49 +64,71 @@ export class Parser {
 
   private functionDef(): Statement {
     const name = this.identifier();
+    // optional parameters (space separated) until colon
+    const params: Identifier[] = [];
+    while (!this.is('colon')) {
+      params.push(this.identifier());
+    }
     this.consume('colon');
     const body = this.block();
     this.expectKeyword('end');
     this.consume('dot');
-    return { kind: 'FunctionDef', name, body };
+    return { kind: 'FunctionDef', name, params, body };
   }
 
   private eventHandler(): Statement {
     const parts: string[] = [];
     while (!this.is('colon')) {
-      parts.push(this.consume(this.peek().type).value ?? '');
+      const tok = this.peek();
+      if (tok.type === 'eof') break;
+      parts.push(this.consume(tok.type).value ?? '');
     }
-    const event = parts.join(' ');
     this.consume('colon');
     const body = this.block();
     this.expectKeyword('end');
     this.consume('dot');
-    return { kind: 'EventHandler', event: event || 'event', body };
+    return { kind: 'EventHandler', event: parts.join(' '), body };
+  }
+
+  private scheduleHandler(): Statement {
+    const parts: string[] = ['every'];
+    while (!this.is('colon')) {
+      const tok = this.peek();
+      if (tok.type === 'eof') break;
+      parts.push(this.consume(tok.type).value ?? '');
+    }
+    this.consume('colon');
+    const body = this.block();
+    this.expectKeyword('end');
+    this.consume('dot');
+    return { kind: 'EventHandler', event: parts.join(' '), body };
   }
 
   private ifStatement(): Statement {
     const condition = this.expression();
-    if (this.is('colon')) {
-      this.consume('colon');
-      if (!this.is('newline') && !this.is('indent')) {
-        const single = this.statement();
-        return {
-          kind: 'IfStatement',
-          condition,
-          then: { kind: 'Block', statements: [single] },
-        };
-      }
+    this.consume('colon');
+    const inlineThen = !this.is('newline');
+    let then: Block;
+    if (inlineThen) {
+      const stmt = this.statement();
+      then = { kind: 'Block', statements: [stmt] };
     } else {
-      throw this.error('Expected colon after if condition');
+      then = this.block();
     }
-    const then = this.block();
     let otherwise: Block | undefined;
     if (this.matchKeyword('else')) {
-      if (this.is('colon')) this.consume('colon');
-      otherwise = this.block();
+      this.consume('colon');
+      const inlineElse = !this.is('newline');
+      if (inlineElse) {
+        otherwise = { kind: 'Block', statements: [this.statement()] };
+      } else {
+        otherwise = this.block();
+      }
     }
-    this.expectKeyword('end');
-    this.consume('dot');
+    if (!inlineThen || otherwise) {
+      this.expectKeyword('end');
+      this.consume('dot');
+    }
     return { kind: 'IfStatement', condition, then, otherwise };
   }
 
@@ -120,50 +145,17 @@ export class Parser {
   }
 
   private repeatStatement(): Statement {
-    const times = this.expressionUntilTimes();
+    const times = this.primary(); // stop before treating 'times' as binary op
     if (this.is('operator') && this.peek().value === 'times') {
-      this.consume('operator');
+      this.pos++;
     } else {
-      throw this.error("Expected 'times'");
+      this.expectKeyword('times');
     }
     this.consume('colon');
     const body = this.block();
     this.expectKeyword('end');
     this.consume('dot');
     return { kind: 'RepeatStatement', times, body };
-  }
-
-  private expressionUntilTimes(): Expression {
-    let left = this.primary();
-    while (true) {
-      if (this.is('operator')) {
-        if (this.peek().value === 'times' && this.lookaheadType() === 'colon') break;
-        const op = this.consume('operator').value as BinaryOperator;
-        const right = this.primary();
-        left = { kind: 'BinaryExpression', operator: op, left, right };
-        continue;
-      }
-      if (this.matchKeyword('is')) {
-        if (this.is('operator')) {
-          const op = this.consume('operator').value as BinaryOperator;
-          const right = this.primary();
-          left = { kind: 'BinaryExpression', operator: op, left, right };
-          continue;
-        } else if (this.matchKeyword('none')) {
-          left = { kind: 'BinaryExpression', operator: 'equal_to', left, right: { kind: 'NoneLiteral' } };
-          continue;
-        } else {
-          left = { kind: 'BinaryExpression', operator: 'equal_to', left, right: this.primary() };
-          continue;
-        }
-      }
-      break;
-    }
-    return left;
-  }
-
-  private lookaheadType(offset = 1): TokenType {
-    return this.tokens[this.pos + offset]?.type;
   }
 
   private returnStatement(): Statement {
@@ -183,30 +175,53 @@ export class Parser {
     return { kind: 'StopStatement', value };
   }
 
+  private callStatement(): Statement {
+    const expr = this.callExpression();
+    this.consume('dot');
+    return { kind: 'ExpressionStatement', expression: expr };
+  }
+
   private sendStatement(): Statement {
     const payload = this.expression();
-    let target;
+    let target: Expression | undefined;
     if (this.matchKeyword('to')) {
       target = this.expression();
     }
     this.consume('dot');
-    return {
-      kind: 'ExpressionStatement',
-      expression: { kind: 'SendExpression', payload, target },
-    };
+    return { kind: 'ExpressionStatement', expression: { kind: 'SendExpression', payload, target } as Expression };
+  }
+
+  private useStatement(): Statement {
+    // Treat use <mod>. as import <mod>.
+    const mod = this.identifier();
+    this.consume('dot');
+    return { kind: 'ImportStatement', source: mod.name } as any;
+  }
+
+  private importStmt(): Statement {
+    const mod = this.identifier();
+    let alias: string | undefined;
+    if (this.matchKeyword('as')) {
+      alias = this.identifier().name;
+    }
+    this.consume('dot');
+    return { kind: 'ImportStatement', source: mod.name, alias } as any;
   }
 
   private storeStatement(): Statement {
     const value = this.expression();
-    let target;
+    let target: Identifier | undefined;
     if (this.matchKeyword('into')) {
       target = this.identifier();
     }
     this.consume('dot');
-    return {
-      kind: 'ExpressionStatement',
-      expression: { kind: 'StoreExpression', value, target },
-    };
+    return { kind: 'ExpressionStatement', expression: { kind: 'StoreExpression', value, target } as Expression };
+  }
+
+  private ensureLike(kind: 'EnsureExpression' | 'ValidateExpression' | 'ExpectExpression'): Statement {
+    const condition = this.expression();
+    this.consume('dot');
+    return { kind: 'ExpressionStatement', expression: { kind, condition } as Expression };
   }
 
   private block(): Block {
@@ -258,9 +273,18 @@ export class Parser {
 
   private primary(): Expression {
     if (this.matchKeyword('fetch')) return this.fetchExpression();
-    if (this.matchKeyword('get')) return this.fetchExpression();
     if (this.matchKeyword('call')) return this.callExpression();
-    if (this.is('identifier')) return this.identifier();
+    if (this.is('identifier')) {
+      const id = this.identifier();
+      // namespace access: foo::bar
+      if (this.is('colon') && this.peek(1)?.type === 'colon' && this.peek(2)?.type === 'identifier') {
+        this.consume('colon');
+        this.consume('colon');
+        const tail = this.identifier();
+        return { kind: 'Identifier', name: `${id.name}::${tail.name}` };
+      }
+      return id;
+    }
     if (this.is('number') || this.is('string')) return this.literal();
     if (this.matchKeyword('true')) return { kind: 'BooleanLiteral', value: true };
     if (this.matchKeyword('false')) return { kind: 'BooleanLiteral', value: false };
@@ -271,12 +295,12 @@ export class Parser {
   private fetchExpression(): Expression {
     const parts: string[] = [];
     while (this.is('identifier') || this.is('keyword')) {
-      if (this.peek().type === 'keyword' && ['where', 'into'].includes(this.peek().value ?? ''))
-        break;
-      parts.push(this.consume(this.peek().type).value ?? '');
+      const next = this.peek();
+      if (next.type === 'keyword' && ['where', 'into'].includes(next.value ?? '')) break;
+      parts.push(this.consume(next.type).value ?? '');
     }
     let qualifier: string | undefined;
-    let into;
+    let into: Identifier | undefined;
     if (this.matchKeyword('where')) {
       const qualParts: string[] = [];
       while (
@@ -301,6 +325,9 @@ export class Parser {
     const args: Expression[] = [];
     if (this.matchKeyword('with')) {
       args.push(this.expression());
+      while (this.matchKeyword(',' as any)) {
+        args.push(this.expression());
+      }
     }
     return { kind: 'CallExpression', callee, args };
   }
@@ -316,7 +343,7 @@ export class Parser {
     return { kind: 'Identifier', name: tok.value ?? '' };
   }
 
-  private consume(type: TokenType): Token {
+  private consume(type: Token['type']): Token {
     const tok = this.peek();
     if (tok.type !== type) throw this.error(`Expected ${type} but got ${tok.type}`);
     this.pos++;
@@ -337,59 +364,37 @@ export class Parser {
     return false;
   }
 
-  private expectKeyword(value: string) {
-    const tok = this.peek();
-    if (tok.type !== 'keyword' || tok.value !== value) {
-      throw this.error(`Expected keyword '${value}'`);
+  private matchColon(): boolean {
+    if (this.is('colon')) {
+      this.pos++;
+      return true;
     }
-    this.pos++;
+    return false;
   }
 
-  private is(type: TokenType): boolean {
-    return this.peek().type === type;
+  private expectKeyword(value: string) {
+    if (!this.matchKeyword(value)) throw this.error(`Expected keyword ${value}`);
   }
 
   private skipTrivia() {
-    while (this.is('newline') || this.is('dot')) {
-      this.pos++;
-    }
+    while (this.is('newline')) this.pos++;
   }
 
-  private callStatement(): Statement {
-    const callee = this.identifier();
-    const args: Expression[] = [];
-    if (this.matchKeyword('with')) {
-      args.push(this.expression());
-    }
-    this.consume('dot');
-    return { kind: 'ExpressionStatement', expression: { kind: 'CallExpression', callee, args } };
+  private is(type: Token['type']): boolean {
+    return this.peek().type === type;
   }
 
-  private ensureLike(
-    kind: 'EnsureExpression' | 'ValidateExpression' | 'ExpectExpression'
-  ): Statement {
-    const condition = this.expression();
-    this.consume('dot');
-    return { kind: 'ExpressionStatement', expression: { kind, condition } as any };
+  private peek(offset = 0): Token {
+    return this.tokens[this.pos + offset] || { type: 'eof', value: undefined, line: 0, column: 0 } as any;
   }
 
-  private useStatement(): Statement | null {
-    if (this.is('identifier')) this.identifier();
-    if (this.is('string')) this.literal();
-    this.consume('dot');
-    return null;
-  }
-
-  private peek(): Token {
-    return this.tokens[this.pos];
-  }
-
-  /* c8 ignore start */
-  private error(message: string): Error {
+  private error(msg: string): Error {
     const tok = this.peek();
-    return new Error(`${message} at line ${tok.line}, column ${tok.column}`);
+    return new Error(`${msg} at line ${tok.line}, column ${tok.column}`);
   }
-  /* c8 ignore stop */
 }
 
-export const parse = (source: string) => new Parser().parse(source);
+const parserInstance = new Parser();
+export function parse(source: string): Program {
+  return parserInstance.parse(source);
+}

@@ -32,6 +32,19 @@ describe('parser statements', () => {
     expect(fetch.into.name).toBe('record');
   });
 
+  it('parses scheduling event', () => {
+    const ast = parse('every 5 minutes:\n  return none.\nend.');
+    const ev = ast.body[0] as any;
+    expect(ev.kind).toBe('EventHandler');
+    expect(ev.event).toContain('every 5 minutes');
+  });
+
+  it('parses multiline strings', () => {
+    const ast = parse('let msg = "hello\\nworld".');
+    const val = (ast.body[0] as any).value;
+    expect(val.value).toContain('\n');
+  });
+
   it('parses fetch with into only', () => {
     const ast = parse('let x = fetch users into list.');
     const fetch = (ast.body[0] as any).value;
@@ -65,6 +78,16 @@ describe('parser statements', () => {
     const ifStmt = ast.body[0] as any;
     expect(ifStmt.then.statements[0].kind).toBe('ReturnStatement');
     expect(ifStmt.otherwise).toBeUndefined();
+  });
+
+  it('parses function definition', () => {
+    const ast = parse('define foo:\n  return 1.\nend.');
+    expect(ast.body[0].kind).toBe('FunctionDef');
+  });
+
+  it('parses import', () => {
+    const ast = parse('import math.');
+    expect(ast.body[0].kind).toBe('ImportStatement');
   });
 
   it('parses repeat using operator times token', () => {

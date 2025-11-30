@@ -1,11 +1,6 @@
-import { createToken, Lexer, type ILexingResult } from 'chevrotain';
-import { TokenType as TT, Token } from './types.js';
+import { createToken, Lexer, type IToken } from 'chevrotain';
+import { Token } from './types.js';
 
-// Token types to keep compatibility with existing parser
-export type TokenType = TT;
-export type { Token };
-
-// Keywords and operators
 const keywordList = [
   'let',
   'define',
@@ -24,10 +19,12 @@ const keywordList = [
   'none',
   'true',
   'false',
+  'as',
   'ensure',
   'validate',
   'expect',
   'use',
+  'import',
   'call',
   'with',
   'where',
@@ -51,7 +48,6 @@ const operatorList = [
   'less_than',
 ].sort((a, b) => b.length - a.length);
 
-// Chevrotain token definitions
 const Newline = createToken({ name: 'Newline', pattern: /\r?\n/, line_breaks: true });
 const Comment = createToken({ name: 'Comment', pattern: /#.*/ });
 const WS = createToken({ name: 'WS', pattern: /[ \t]+/, group: Lexer.SKIPPED });
@@ -60,18 +56,21 @@ const Colon = createToken({ name: 'Colon', pattern: /:/ });
 const Equals = createToken({ name: 'Equals', pattern: /=/ });
 const StringLiteral = createToken({
   name: 'StringLiteral',
-  pattern: /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/,
+  // allow multiline strings with escapes
+  pattern: /"(?:[^"\\]|\\.|\\\n)*"|'(?:[^'\\]|\\.|\\\n)*'/,
+  line_breaks: true,
 });
 const NumberLiteral = createToken({ name: 'NumberLiteral', pattern: /\d+(?:\.\d+)?/ });
-
-const Identifier = createToken({ name: 'Identifier', pattern: /[A-Za-z0-9_\\/-]+/ });
+const Identifier = createToken({ name: 'Identifier', pattern: /[A-Za-z0-9_\/-]+/ });
 const Operator = createToken({
   name: 'Operator',
   pattern: new RegExp(`(?:${operatorList.join('|')})\\b`),
+  longer_alt: Identifier,
 });
 const Keyword = createToken({
   name: 'Keyword',
   pattern: new RegExp(`(?:${keywordList.join('|')})\\b`),
+  longer_alt: Identifier,
 });
 
 const allTokens = [
@@ -87,14 +86,55 @@ const allTokens = [
   Keyword,
   Identifier,
 ];
-
 const lineLexer = new Lexer(allTokens, { positionTracking: 'onlyStart' });
 
-export function tokenize(source: string): Token[] {
-  const lines = source.replace(/\r\n?/g, '\n').split('\n');
-  const tokens: Token[] = [];
-  const indentStack = [0];
+export const tokenVocabulary = {
+  Newline,
+  Indent: createToken({ name: 'Indent', pattern: Lexer.NA }),
+  Dedent: createToken({ name: 'Dedent', pattern: Lexer.NA }),
+  EOF: createToken({ name: 'EOF', pattern: Lexer.NA }),
+  Dot,
+  Colon,
+  Equals,
+  StringLiteral,
+  NumberLiteral,
+  Operator,
+  Keyword,
+  Identifier,
+  allTokens: [] as any[],
+};
 
+tokenVocabulary.allTokens = [
+  Comment,
+  WS,
+  Newline,
+  Dot,
+  Colon,
+  Equals,
+  StringLiteral,
+  NumberLiteral,
+  Operator,
+  Keyword,
+  Identifier,
+  tokenVocabulary.Indent,
+  tokenVocabulary.Dedent,
+  tokenVocabulary.EOF,
+];
+
+export function tokenize(source: string): Token[] {
+  const chev = tokenizeChevrotain(source);
+  return chev.map((t) => {
+    const type = toType(t.tokenType);
+    const value =
+      type === 'string' ? stripQuotes(t.image) : t.image;
+    return { type, value, line: t.startLine!, column: t.startColumn! };
+  });
+}
+
+export function tokenizeChevrotain(source: string): IToken[] {
+  const lines = source.replace(/\r\n?/g, '\n').split('\n');
+  const tokens: IToken[] = [];
+  const indentStack = [0];
   lines.forEach((line, idx) => {
     const lineNo = idx + 1;
     if (line.trim() === '' || line.trim().startsWith('#')) return;
@@ -102,65 +142,85 @@ export function tokenize(source: string): Token[] {
     const currentIndent = indentStack[indentStack.length - 1];
     if (indent > currentIndent) {
       indentStack.push(indent);
-      tokens.push({ type: 'indent', line: lineNo, column: 1 });
+      tokens.push(makeVirtual(tokenVocabulary.Indent, lineNo, 1));
     } else {
       while (indent < indentStack[indentStack.length - 1]) {
         indentStack.pop();
-        tokens.push({ type: 'dedent', line: lineNo, column: 1 });
+        tokens.push(makeVirtual(tokenVocabulary.Dedent, lineNo, 1));
       }
     }
-
     const segment = line.slice(indent);
-    const lexResult: ILexingResult = lineLexer.tokenize(segment);
-    if (lexResult.errors.length) {
-      throw new Error(`Lexing error at line ${lineNo}: ${lexResult.errors[0].message}`);
-    }
+    const lexResult = lineLexer.tokenize(segment);
+    if (lexResult.errors.length) throw new Error(`Lexing error at line ${lineNo}: ${lexResult.errors[0].message}`);
     for (const tk of lexResult.tokens) {
-      const column = indent + tk.startOffset + 1;
-      switch (tk.tokenType) {
-        case Dot:
-          tokens.push({ type: 'dot', line: lineNo, column });
-          break;
-        case Colon:
-          tokens.push({ type: 'colon', line: lineNo, column });
-          break;
-        case Equals:
-          tokens.push({ type: 'equals', line: lineNo, column });
-          break;
-        case StringLiteral:
-          tokens.push({ type: 'string', value: stripQuotes(tk.image), line: lineNo, column });
-          break;
-        case NumberLiteral:
-          tokens.push({ type: 'number', value: tk.image, line: lineNo, column });
-          break;
-        case Operator:
-          tokens.push({ type: 'operator', value: tk.image, line: lineNo, column });
-          break;
-        case Keyword:
-          tokens.push({ type: 'keyword', value: tk.image, line: lineNo, column });
-          break;
-        case Identifier:
-          tokens.push({ type: 'identifier', value: tk.image, line: lineNo, column });
-          break;
-        default:
-          break;
-      }
+      if (tk.tokenType === Newline || tk.tokenType === Comment) continue;
+      tk.startLine = lineNo;
+      tk.startColumn = indent + tk.startOffset + 1;
+      tokens.push(tk);
     }
-    tokens.push({ type: 'newline', line: lineNo, column: line.length + 1 });
+    tokens.push(makeVirtual(Newline, lineNo, line.length + 1));
   });
-
   while (indentStack.length > 1) {
     indentStack.pop();
-    tokens.push({ type: 'dedent', line: lines.length, column: 1 });
+    tokens.push(makeVirtual(tokenVocabulary.Dedent, lines.length, 1));
   }
-
-  tokens.push({ type: 'eof', line: lines.length + 1, column: 1 });
+  tokens.push(makeVirtual(tokenVocabulary.EOF, lines.length + 1, 1));
   return tokens;
 }
 
-function stripQuotes(img: string): string {
-  if (!img) return '';
-  const quote = img[0];
-  const inner = img.slice(1, -1);
-  return inner.replace(/\\(.)/g, '$1');
+function makeVirtual(tokenType: any, line: number, column: number): IToken {
+  return { image: '', startOffset: 0, tokenType, startLine: line, startColumn: column } as IToken;
+}
+
+function toType(tokenType: any): Token['type'] {
+  switch (tokenType) {
+    case tokenVocabulary.Newline:
+      return 'newline';
+    case tokenVocabulary.Indent:
+      return 'indent';
+    case tokenVocabulary.Dedent:
+      return 'dedent';
+    case tokenVocabulary.EOF:
+      return 'eof';
+    case tokenVocabulary.Dot:
+      return 'dot';
+    case tokenVocabulary.Colon:
+      return 'colon';
+    case tokenVocabulary.Equals:
+      return 'equals';
+    case tokenVocabulary.StringLiteral:
+      return 'string';
+    case tokenVocabulary.NumberLiteral:
+      return 'number';
+    case tokenVocabulary.Operator:
+      return 'operator';
+    case tokenVocabulary.Keyword:
+      return 'keyword';
+    case tokenVocabulary.Identifier:
+      return 'identifier';
+    default:
+      return 'identifier';
+  }
+}
+
+function stripQuotes(image: string): string {
+  const inner = image.slice(1, -1);
+  return inner.replace(/\\(.)/g, (_m, ch) => {
+    switch (ch) {
+      case 'n':
+        return '\n';
+      case 'r':
+        return '\r';
+      case 't':
+        return '\t';
+      case '"':
+        return '"';
+      case "'":
+        return "'";
+      case '\\':
+        return '\\';
+      default:
+        return ch;
+    }
+  });
 }

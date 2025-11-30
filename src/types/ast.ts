@@ -84,6 +84,7 @@ export type Statement =
   | RepeatStatement
   | FunctionDef
   | EventHandler
+  | ImportStatement
   | ExpressionStatement;
 
 export type Block = { kind: 'Block'; statements: Statement[] };
@@ -121,6 +122,7 @@ export type RepeatStatement = {
 export type FunctionDef = {
   kind: 'FunctionDef';
   name: Identifier;
+  params?: Identifier[];
   body: Block;
 };
 
@@ -128,6 +130,12 @@ export type EventHandler = {
   kind: 'EventHandler';
   event: string;
   body: Block;
+};
+
+export type ImportStatement = {
+  kind: 'ImportStatement';
+  source: string;
+  alias?: string;
 };
 
 export type ExpressionStatement = { kind: 'ExpressionStatement'; expression: Expression };

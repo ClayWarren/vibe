@@ -1,51 +1,104 @@
 import type { IRNode } from '../ir/index.js';
 
-export function emitTypeScript(node: IRNode, indent = 0): string {
+type EmitOptions = { withMap?: boolean };
+type MapEntry = { out: number; src?: { line: number; column: number } };
+
+export function emitTypeScript(
+  node: IRNode,
+  options: EmitOptions = {},
+  indent = 0,
+  state: { line: number; map: MapEntry[] } = { line: 1, map: [] }
+): { code: string; map: MapEntry[] } {
+  const code = emitNode(node, indent, state, options.withMap === true);
+  return { code, map: state.map };
+}
+
+// Backward-compat helper
+export function emitTypeScriptLegacy(node: IRNode): string {
+  return emitTypeScript(node).code;
+}
+
+function emitNode(
+  node: IRNode,
+  indent: number,
+  state: { line: number; map: MapEntry[] },
+  track: boolean
+): string {
   const pad = '  '.repeat(indent);
   switch (node.kind) {
     case 'IRProgram':
-      return node.body.map((n) => emitTypeScript(n, indent)).join('\n');
+      return node.body.map((n) => emitNode(n, indent, state, track)).join('\n');
     case 'IRLet':
-      return `${pad}const ${node.name} = ${emitTypeScript(node.value, indent)};`;
+      map(state, node);
+      return lineify(state, `${pad}const ${node.name} = ${emitNode(node.value, indent, state, track)};`);
     case 'IRReturn':
-      return `${pad}return ${node.value ? emitTypeScript(node.value, indent) : ''};`;
+      map(state, node);
+      return lineify(state, `${pad}return ${node.value ? emitNode(node.value, indent, state, track) : ''};`);
     case 'IRStop':
-      return `${pad}throw new Error(${emitTypeScript(node.value, indent)});`;
+      map(state, node);
+      return lineify(state, `${pad}throw new Error(${emitNode(node.value, indent, state, track)});`);
     case 'IRIf': {
-      const thenPart = node.then.map((n) => emitTypeScript(n, indent + 1)).join('\n');
-      const elsePart = node.otherwise?.map((n) => emitTypeScript(n, indent + 1)).join('\n');
+      map(state, node);
+      const thenPart = node.then.map((n) => emitNode(n, indent + 1, state, track)).join('\n');
+      const elsePart = node.otherwise?.map((n) => emitNode(n, indent + 1, state, track)).join('\n');
       const elseBlock = elsePart ? `\n${pad}} else {\n${elsePart}\n${pad}}` : '';
-      return `${pad}if (${emitTypeScript(node.condition, indent)}) {\n${thenPart}\n${pad}}${elseBlock}`;
+      return lineify(
+        state,
+        `${pad}if (${emitNode(node.condition, indent, state, track)}) {\n${thenPart}\n${pad}}${elseBlock}`
+      );
     }
     case 'IRForEach': {
-      const body = node.body.map((n) => emitTypeScript(n, indent + 1)).join('\n');
-      return `${pad}for (const ${node.item} of ${emitTypeScript(node.collection, indent)}) {\n${body}\n${pad}}`;
+      map(state, node);
+      const body = node.body.map((n) => emitNode(n, indent + 1, state, track)).join('\n');
+      return lineify(
+        state,
+        `${pad}for (const ${node.item} of ${emitNode(node.collection, indent, state, track)}) {\n${body}\n${pad}}`
+      );
     }
     case 'IRRepeat': {
-      const body = node.body.map((n) => emitTypeScript(n, indent + 1)).join('\n');
-      const times = emitTypeScript(node.times, indent);
-      return `${pad}for (let i = 0; i < ${times}; i++) {\n${body}\n${pad}}`;
+      map(state, node);
+      const body = node.body.map((n) => emitNode(n, indent + 1, state, track)).join('\n');
+      const times = emitNode(node.times, indent, state, track);
+      return lineify(state, `${pad}for (let i = 0; i < ${times}; i++) {\n${body}\n${pad}}`);
     }
     case 'IRCall':
-      return `${pad}${node.callee}(${node.args.map((a) => emitTypeScript(a, indent)).join(', ')})`;
+      return `${pad}${node.callee}(${node.args.map((a) => emitNode(a, indent, state, track)).join(', ')})`;
     case 'IRFetch':
-      return `${pad}await runtime.fetch(${JSON.stringify(node.target)}, ${node.qualifier ? JSON.stringify(node.qualifier) : 'undefined'})`;
+      return `${pad}await runtime.fetch(${JSON.stringify(node.target)}, ${
+        node.qualifier ? JSON.stringify(node.qualifier) : 'undefined'
+      })`;
     case 'IREnsure':
-      return `${pad}runtime.${node.op}(${emitTypeScript(node.condition, indent)});`;
+      return `${pad}runtime.${node.op}(${emitNode(node.condition, indent, state, track)});`;
     case 'IRSend':
-      return `${pad}await runtime.send(${emitTypeScript(node.payload, indent)}${node.target ? `, ${emitTypeScript(node.target, indent)}` : ''});`;
+      return `${pad}await runtime.send(${emitNode(node.payload, indent, state, track)}${
+        node.target ? `, ${emitNode(node.target, indent, state, track)}` : ''
+      });`;
     case 'IRStore':
-      return `${pad}await runtime.store(${emitTypeScript(node.value, indent)}${node.target ? `, ${JSON.stringify(node.target)}` : ''});`;
+      return `${pad}await runtime.store(${emitNode(node.value, indent, state, track)}${
+        node.target ? `, ${JSON.stringify(node.target)}` : ''
+      });`;
     case 'IRLiteral':
       return typeof node.value === 'string' ? `${JSON.stringify(node.value)}` : String(node.value);
     case 'IRIdentifier':
       return node.name;
     case 'IRBinary':
-      return `${emitTypeScript(node.left, indent)} ${tsOp(node.op)} ${emitTypeScript(node.right, indent)}`;
+      return `${emitNode(node.left, indent, state, track)} ${tsOp(node.op)} ${emitNode(node.right, indent, state, track)}`;
     /* c8 ignore next */
     default:
       throw new Error(`Unhandled IR node ${(node as IRNode).kind}`);
   }
+}
+
+function map(state: { line: number; map: MapEntry[] }, node: any) {
+  if (node.loc) {
+    state.map.push({ out: state.line, src: node.loc });
+  }
+}
+
+function lineify(state: { line: number; map: MapEntry[] }, code: string): string {
+  const lines = code.split('\n').length;
+  state.line += lines - 1;
+  return code;
 }
 
 function tsOp(op: string): string {

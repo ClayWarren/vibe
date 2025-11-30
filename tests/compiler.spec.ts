@@ -24,7 +24,7 @@ describe('VCL pipeline', () => {
 
   it('lowers to IR and emits TypeScript', () => {
     const ir = lowerProgram(parse(sample));
-    const ts = emitTypeScript(ir);
+    const ts = emitTypeScript(ir).code;
     expect(ts).toContain('const get_user_profile');
     expect(ts).toContain('await runtime.fetch');
     expect(ts).toContain('throw new Error');

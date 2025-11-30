@@ -3,7 +3,7 @@ import { parse } from '../src/parser/index.js';
 import { lowerProgram } from '../src/ir/index.js';
 import { emitTypeScript } from '../src/transpilers/typescript.js';
 
-const compileTS = (code: string) => emitTypeScript(lowerProgram(parse(code)));
+const compileTS = (code: string) => emitTypeScript(lowerProgram(parse(code))).code;
 
 describe('TypeScript emitter', () => {
   it('emits if/else and fetch', () => {
@@ -57,7 +57,7 @@ describe('TypeScript emitter', () => {
       op: 'custom_op',
       left: { kind: 'IRLiteral', value: 1 },
       right: { kind: 'IRLiteral', value: 2 },
-    } as any);
+    } as any).code;
     expect(ts).toContain('custom_op');
   });
 });
