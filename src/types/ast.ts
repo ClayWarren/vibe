@@ -12,6 +12,8 @@ export type Expression =
   | BinaryExpression
   | CallExpression
   | FetchExpression
+  | SendExpression
+  | StoreExpression
   | EnsureExpression
   | ValidateExpression
   | ExpectExpression;
@@ -44,6 +46,18 @@ export type FetchExpression = {
   target: string;
   qualifier?: string;
   into?: Identifier;
+};
+
+export type SendExpression = {
+  kind: 'SendExpression';
+  payload: Expression;
+  target?: Expression;
+};
+
+export type StoreExpression = {
+  kind: 'StoreExpression';
+  value: Expression;
+  target?: Identifier;
 };
 
 export type EnsureExpression = {

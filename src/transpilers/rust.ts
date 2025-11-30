@@ -32,6 +32,10 @@ export function emitRust(node: IRNode, indent = 0): string {
       return `${pad}runtime::fetch(${JSON.stringify(node.target)}, ${node.qualifier ? JSON.stringify(node.qualifier) : 'None'})`;
     case 'IREnsure':
       return `${pad}runtime::${node.op}(${emitRust(node.condition, indent)});`;
+    case 'IRSend':
+      return `${pad}runtime::send(${emitRust(node.payload, indent)}${node.target ? `, ${emitRust(node.target, indent)}` : ''});`;
+    case 'IRStore':
+      return `${pad}runtime::store(${emitRust(node.value, indent)}${node.target ? `, Some(${JSON.stringify(node.target)})` : ', None'});`;
     case 'IRLiteral':
       if (typeof node.value === 'string') return `${JSON.stringify(node.value)}.to_string()`;
       if (node.value === null) return 'None';

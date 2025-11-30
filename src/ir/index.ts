@@ -10,6 +10,8 @@ export type IRNode =
   | { kind: 'IRRepeat'; times: IRNode; body: IRNode[] }
   | { kind: 'IRCall'; callee: string; args: IRNode[] }
   | { kind: 'IRFetch'; target: string; qualifier?: string }
+  | { kind: 'IRSend'; payload: IRNode; target?: IRNode }
+  | { kind: 'IRStore'; value: IRNode; target?: string }
   | { kind: 'IREnsure'; op: 'ensure' | 'validate' | 'expect'; condition: IRNode }
   | { kind: 'IRLiteral'; value: unknown }
   | { kind: 'IRIdentifier'; name: string }
@@ -87,6 +89,18 @@ function lowerExpression(expr: Expression): IRNode {
       return { kind: 'IRCall', callee: expr.callee.name, args: expr.args.map(lowerExpression) };
     case 'FetchExpression':
       return { kind: 'IRFetch', target: expr.target, qualifier: expr.qualifier };
+    case 'SendExpression':
+      return {
+        kind: 'IRSend',
+        payload: lowerExpression(expr.payload),
+        target: expr.target ? lowerExpression(expr.target) : undefined,
+      };
+    case 'StoreExpression':
+      return {
+        kind: 'IRStore',
+        value: lowerExpression(expr.value),
+        target: expr.target?.name,
+      };
     case 'EnsureExpression':
       return { kind: 'IREnsure', op: 'ensure', condition: lowerExpression(expr.condition) };
     case 'ValidateExpression':

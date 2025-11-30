@@ -34,9 +34,7 @@ npm run dev   # opens VCL playground with live compile to TS/Rust
 - English-like control words (define, when, fetch, ensure, validate)
 - Implicit async for I/O verbs
 
-## Next steps
-
-- Harden tokenizer for strings and multi-word tokens
-- Complete parser coverage for natural verbs (fetch/get/send/store)
-- Flesh out runtime for database/http bindings
-- Add end-to-end tests using sample VCL programs
+## Status
+- Tokenizer hardened (Chevrotain-based; strings, multi-word ops, indentation).
+- Parser covers fetch/get/send/store and control constructs.
+- Runtime interpreter + Express demo server; end-to-end tests included.

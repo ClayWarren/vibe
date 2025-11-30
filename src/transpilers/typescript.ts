@@ -32,6 +32,10 @@ export function emitTypeScript(node: IRNode, indent = 0): string {
       return `${pad}await runtime.fetch(${JSON.stringify(node.target)}, ${node.qualifier ? JSON.stringify(node.qualifier) : 'undefined'})`;
     case 'IREnsure':
       return `${pad}runtime.${node.op}(${emitTypeScript(node.condition, indent)});`;
+    case 'IRSend':
+      return `${pad}await runtime.send(${emitTypeScript(node.payload, indent)}${node.target ? `, ${emitTypeScript(node.target, indent)}` : ''});`;
+    case 'IRStore':
+      return `${pad}await runtime.store(${emitTypeScript(node.value, indent)}${node.target ? `, ${JSON.stringify(node.target)}` : ''});`;
     case 'IRLiteral':
       return typeof node.value === 'string' ? `${JSON.stringify(node.value)}` : String(node.value);
     case 'IRIdentifier':

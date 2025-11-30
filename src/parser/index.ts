@@ -29,6 +29,7 @@ export class Parser {
 
   private statement(): Statement {
     this.skipTrivia();
+    if (this.matchKeyword('use')) return this.useStatement();
     if (this.matchKeyword('let')) return this.letStatement();
     if (this.matchKeyword('define')) return this.functionDef();
     if (this.matchKeyword('when')) return this.eventHandler();
@@ -37,6 +38,9 @@ export class Parser {
     if (this.matchKeyword('repeat')) return this.repeatStatement();
     if (this.matchKeyword('return')) return this.returnStatement();
     if (this.matchKeyword('stop')) return this.stopStatement();
+    if (this.matchKeyword('send')) return this.sendStatement();
+    if (this.matchKeyword('store')) return this.storeStatement();
+    if (this.matchKeyword('get')) return this.fetchStatementAsExpression();
     if (this.matchKeyword('call')) return this.callStatement();
     if (this.matchKeyword('ensure')) return this.ensureLike('EnsureExpression');
     if (this.matchKeyword('validate')) return this.ensureLike('ValidateExpression');
@@ -179,6 +183,32 @@ export class Parser {
     return { kind: 'StopStatement', value };
   }
 
+  private sendStatement(): Statement {
+    const payload = this.expression();
+    let target;
+    if (this.matchKeyword('to')) {
+      target = this.expression();
+    }
+    this.consume('dot');
+    return {
+      kind: 'ExpressionStatement',
+      expression: { kind: 'SendExpression', payload, target },
+    };
+  }
+
+  private storeStatement(): Statement {
+    const value = this.expression();
+    let target;
+    if (this.matchKeyword('into')) {
+      target = this.identifier();
+    }
+    this.consume('dot');
+    return {
+      kind: 'ExpressionStatement',
+      expression: { kind: 'StoreExpression', value, target },
+    };
+  }
+
   private block(): Block {
     const statements: Statement[] = [];
     this.skipTrivia();
@@ -228,6 +258,7 @@ export class Parser {
 
   private primary(): Expression {
     if (this.matchKeyword('fetch')) return this.fetchExpression();
+    if (this.matchKeyword('get')) return this.fetchExpression();
     if (this.matchKeyword('call')) return this.callExpression();
     if (this.is('identifier')) return this.identifier();
     if (this.is('number') || this.is('string')) return this.literal();
@@ -340,6 +371,13 @@ export class Parser {
     const condition = this.expression();
     this.consume('dot');
     return { kind: 'ExpressionStatement', expression: { kind, condition } as any };
+  }
+
+  private useStatement(): Statement | null {
+    if (this.is('identifier')) this.identifier();
+    if (this.is('string')) this.literal();
+    this.consume('dot');
+    return null;
   }
 
   private peek(): Token {

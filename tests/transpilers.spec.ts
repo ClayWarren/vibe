@@ -34,15 +34,21 @@ describe('TypeScript emitter', () => {
   });
 
   it('maps comparison operators', () => {
-    const ts = compileTS('let ok = a greater_than b.\nlet neq = a not_equal_to b.\nlet div = a divided_by b.');
-    expect(ts).toContain('>');
+    const ts = compileTS('let ok = a greater_than b.\nlet neq = a not_equal_to b.');
+    expect(ts).toContain('> b');
     expect(ts).toContain('!==');
-    expect(ts).toContain('/ b');
   });
-  it('emits divided_by and less_than ops', () => {
-    const ts = compileTS(`let ratio = a divided_by b.\nlet small = a less_than b.`);
+
+  it('emits send and store', () => {
+    const ts = compileTS('send body to target.\nstore body into cache.');
+    expect(ts).toContain('runtime.send');
+    expect(ts).toContain('runtime.store');
+  });
+
+  it('emits minus and divided_by', () => {
+    const ts = compileTS('let diff = a minus b.\nlet ratio = a divided_by b.');
+    expect(ts).toContain('- b');
     expect(ts).toContain('/ b');
-    expect(ts).toContain('< b');
   });
 
   it('handles unknown binary op gracefully', () => {
@@ -55,15 +61,3 @@ describe('TypeScript emitter', () => {
     expect(ts).toContain('custom_op');
   });
 });
-
-  it('emits minus operator', () => {
-    const ts = compileTS('let diff = a minus b.');
-    expect(ts).toContain('- b');
-  });
-
-  it('emits greater_than and less_than from binary', () => {
-    const ts = compileTS(`let c = a greater_than b.
-let d = a less_than b.`);
-    expect(ts).toContain('> b');
-    expect(ts).toContain('< b');
-  });

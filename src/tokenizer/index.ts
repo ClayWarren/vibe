@@ -1,25 +1,12 @@
-export type TokenType =
-  | 'keyword'
-  | 'identifier'
-  | 'number'
-  | 'string'
-  | 'newline'
-  | 'indent'
-  | 'dedent'
-  | 'dot'
-  | 'colon'
-  | 'equals'
-  | 'operator'
-  | 'eof';
+import { createToken, Lexer, type ILexingResult } from 'chevrotain';
+import { TokenType as TT, Token } from './types.js';
 
-export type Token = {
-  type: TokenType;
-  value?: string;
-  line: number;
-  column: number;
-};
+// Token types to keep compatibility with existing parser
+export type TokenType = TT;
+export type { Token };
 
-const KEYWORDS = new Set([
+// Keywords and operators
+const keywordList = [
   'let',
   'define',
   'when',
@@ -47,9 +34,13 @@ const KEYWORDS = new Set([
   'into',
   'every',
   'fetch',
-]);
+  'send',
+  'to',
+  'store',
+  'get',
+].sort((a, b) => b.length - a.length);
 
-const OPERATORS = new Set([
+const operatorList = [
   'plus',
   'minus',
   'times',
@@ -58,93 +49,105 @@ const OPERATORS = new Set([
   'not_equal_to',
   'greater_than',
   'less_than',
-]);
+].sort((a, b) => b.length - a.length);
+
+// Chevrotain token definitions
+const Newline = createToken({ name: 'Newline', pattern: /\r?\n/, line_breaks: true });
+const Comment = createToken({ name: 'Comment', pattern: /#.*/ });
+const WS = createToken({ name: 'WS', pattern: /[ \t]+/, group: Lexer.SKIPPED });
+const Dot = createToken({ name: 'Dot', pattern: /\./ });
+const Colon = createToken({ name: 'Colon', pattern: /:/ });
+const Equals = createToken({ name: 'Equals', pattern: /=/ });
+const StringLiteral = createToken({
+  name: 'StringLiteral',
+  pattern: /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/,
+});
+const NumberLiteral = createToken({ name: 'NumberLiteral', pattern: /\d+(?:\.\d+)?/ });
+
+const Identifier = createToken({ name: 'Identifier', pattern: /[A-Za-z0-9_\\/-]+/ });
+const Operator = createToken({
+  name: 'Operator',
+  pattern: new RegExp(`(?:${operatorList.join('|')})\\b`),
+});
+const Keyword = createToken({
+  name: 'Keyword',
+  pattern: new RegExp(`(?:${keywordList.join('|')})\\b`),
+});
+
+const allTokens = [
+  Comment,
+  WS,
+  Newline,
+  Dot,
+  Colon,
+  Equals,
+  StringLiteral,
+  NumberLiteral,
+  Operator,
+  Keyword,
+  Identifier,
+];
+
+const lineLexer = new Lexer(allTokens, { positionTracking: 'onlyStart' });
 
 export function tokenize(source: string): Token[] {
   const lines = source.replace(/\r\n?/g, '\n').split('\n');
   const tokens: Token[] = [];
   const indentStack = [0];
 
-  for (let lineNo = 0; lineNo < lines.length; lineNo++) {
-    const rawLine = lines[lineNo];
-    if (rawLine.trim() === '' || rawLine.trim().startsWith('#')) continue;
-
-    const indent = rawLine.match(/^ */)?.[0].length ?? 0;
+  lines.forEach((line, idx) => {
+    const lineNo = idx + 1;
+    if (line.trim() === '' || line.trim().startsWith('#')) return;
+    const indent = line.match(/^ */)?.[0].length ?? 0;
     const currentIndent = indentStack[indentStack.length - 1];
     if (indent > currentIndent) {
       indentStack.push(indent);
-      tokens.push({ type: 'indent', line: lineNo + 1, column: 1 });
+      tokens.push({ type: 'indent', line: lineNo, column: 1 });
     } else {
       while (indent < indentStack[indentStack.length - 1]) {
         indentStack.pop();
-        tokens.push({ type: 'dedent', line: lineNo + 1, column: 1 });
+        tokens.push({ type: 'dedent', line: lineNo, column: 1 });
       }
     }
 
-    let i = indent;
-    const line = rawLine;
-    while (i < line.length) {
-      const ch = line[i];
-      if (ch === ' ' || ch === '\t') {
-        i++;
-        continue;
-      }
-      const column = i + 1;
-      if (ch === '#') break;
-      if (ch === '.') {
-        tokens.push({ type: 'dot', line: lineNo + 1, column });
-        i++;
-        continue;
-      }
-      if (ch === ':') {
-        tokens.push({ type: 'colon', line: lineNo + 1, column });
-        i++;
-        continue;
-      }
-      if (ch === '=') {
-        tokens.push({ type: 'equals', line: lineNo + 1, column });
-        i++;
-        continue;
-      }
-      if (ch === '"') {
-        let j = i + 1;
-        let value = '';
-        while (j < line.length && line[j] !== '"') {
-          value += line[j];
-          j++;
-        }
-        tokens.push({ type: 'string', value, line: lineNo + 1, column });
-        i = j + 1;
-        continue;
-      }
-      if (/\d/.test(ch)) {
-        let j = i;
-        while (j < line.length && /[\d.]/.test(line[j])) j++;
-        const value = line.slice(i, j);
-        if (value.endsWith('.') && value.length > 1) {
-          tokens.push({ type: 'number', value: value.slice(0, -1), line: lineNo + 1, column });
-          tokens.push({ type: 'dot', line: lineNo + 1, column: column + value.length - 1 });
-        } else {
-          tokens.push({ type: 'number', value, line: lineNo + 1, column });
-        }
-        i = j;
-        continue;
-      }
-      // identifier / keyword / operator
-      let j = i;
-      while (j < line.length && /[A-Za-z_]/.test(line[j])) j++;
-      const word = line.slice(i, j);
-      if (OPERATORS.has(word)) {
-        tokens.push({ type: 'operator', value: word, line: lineNo + 1, column });
-      } else if (KEYWORDS.has(word)) {
-        tokens.push({ type: 'keyword', value: word, line: lineNo + 1, column });
-      } else {
-        tokens.push({ type: 'identifier', value: word, line: lineNo + 1, column });
-      }
-      i = j;
+    const segment = line.slice(indent);
+    const lexResult: ILexingResult = lineLexer.tokenize(segment);
+    if (lexResult.errors.length) {
+      throw new Error(`Lexing error at line ${lineNo}: ${lexResult.errors[0].message}`);
     }
-    tokens.push({ type: 'newline', line: lineNo + 1, column: line.length + 1 });
-  }
+    for (const tk of lexResult.tokens) {
+      const column = indent + tk.startOffset + 1;
+      switch (tk.tokenType) {
+        case Dot:
+          tokens.push({ type: 'dot', line: lineNo, column });
+          break;
+        case Colon:
+          tokens.push({ type: 'colon', line: lineNo, column });
+          break;
+        case Equals:
+          tokens.push({ type: 'equals', line: lineNo, column });
+          break;
+        case StringLiteral:
+          tokens.push({ type: 'string', value: stripQuotes(tk.image), line: lineNo, column });
+          break;
+        case NumberLiteral:
+          tokens.push({ type: 'number', value: tk.image, line: lineNo, column });
+          break;
+        case Operator:
+          tokens.push({ type: 'operator', value: tk.image, line: lineNo, column });
+          break;
+        case Keyword:
+          tokens.push({ type: 'keyword', value: tk.image, line: lineNo, column });
+          break;
+        case Identifier:
+          tokens.push({ type: 'identifier', value: tk.image, line: lineNo, column });
+          break;
+        default:
+          break;
+      }
+    }
+    tokens.push({ type: 'newline', line: lineNo, column: line.length + 1 });
+  });
 
   while (indentStack.length > 1) {
     indentStack.pop();
@@ -153,4 +156,11 @@ export function tokenize(source: string): Token[] {
 
   tokens.push({ type: 'eof', line: lines.length + 1, column: 1 });
   return tokens;
+}
+
+function stripQuotes(img: string): string {
+  if (!img) return '';
+  const quote = img[0];
+  const inner = img.slice(1, -1);
+  return inner.replace(/\\(.)/g, '$1');
 }

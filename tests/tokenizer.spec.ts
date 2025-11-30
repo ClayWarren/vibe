@@ -41,6 +41,13 @@ describe('tokenizer', () => {
     expect(dedents.length).toBeGreaterThan(0);
   });
 
+  it('parses escaped and single-quoted strings', () => {
+    const tokens = tokenize('let s = \"hi \\\"there\\\"\".\nlet t = \'ok\'.');
+    const strValues = tokens.filter((t) => t.type === 'string').map((t) => t.value);
+    expect(strValues).toContain('hi \"there\"');
+    expect(strValues).toContain('ok');
+  });
+
   it('skips comment lines', () => {
     const tokens = tokenize('# comment only');
     expect(tokens.some((t) => t.type !== 'eof')).toBe(false);

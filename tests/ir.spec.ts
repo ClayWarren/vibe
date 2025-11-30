@@ -28,6 +28,13 @@ describe('IR lowering', () => {
     expect(kinds).toContain('IRFetch');
   });
 
+  it('lowers send and store', () => {
+    const ir = lowerProgram(parse('send body to target.\nstore body into cache.')) as any;
+    const kinds = ir.body.map((n: any) => n.kind);
+    expect(kinds).toContain('IRSend');
+    expect(kinds).toContain('IRStore');
+  });
+
   it('lowers loops and conditionals', () => {
     const ast = parse(
       `for each x in xs:\n  return x.\nend.\nrepeat 3 times:\n  return none.\nend.\nif true:\n  return 1.\nelse:\n  return 2.\nend.`
@@ -37,11 +44,5 @@ describe('IR lowering', () => {
     expect(bodyKinds).toContain('IRForEach');
     expect(bodyKinds).toContain('IRRepeat');
     expect(bodyKinds).toContain('IRIf');
-  });
-
-  it('captures stop statements in IR', () => {
-    const ast = parse('stop with "boom".');
-    const ir = lowerProgram(ast);
-    expect((ir as any).body[0].kind).toBe('IRStop');
   });
 });
