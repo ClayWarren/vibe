@@ -19,11 +19,11 @@
 - End-to-end transpilation to runnable TS/Rust ✅
 - Fixtures/snapshot coverage for transpilation ✅
 
-## v0.4
+## v0.4 (done)
 
-- IDE tooling (LSP stub, autocomplete from grammar)
-- Formatter and linter (enforce periods/indent)
-- Source maps back to VCL
+- IDE tooling (CLI `vcl lsp` completion stub)
+- Formatter and linter (period/indent enforcement)
+- Source maps for TS emitter
 
 ## v1.0 (done)
 
