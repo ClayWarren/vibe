@@ -65,31 +65,38 @@ export class Parser {
   }
 
   private eventHandler(): Statement {
-    const event = this.consumeValue();
+    const parts: string[] = [];
+    while (!this.is('colon')) {
+      parts.push(this.consume(this.peek().type).value ?? '');
+    }
+    const event = parts.join(' ');
     this.consume('colon');
     const body = this.block();
     this.expectKeyword('end');
     this.consume('dot');
-    return { kind: 'EventHandler', event: event ?? 'event', body };
+    return { kind: 'EventHandler', event: event || 'event', body };
   }
 
   private ifStatement(): Statement {
     const condition = this.expression();
-    if (this.matchColon()) {
-      const single = this.statement();
-      return {
-        kind: 'IfStatement',
-        condition,
-        then: { kind: 'Block', statements: [single] },
-      };
+    if (this.is('colon')) {
+      this.consume('colon');
+      if (!this.is('newline') && !this.is('indent')) {
+        const single = this.statement();
+        return {
+          kind: 'IfStatement',
+          condition,
+          then: { kind: 'Block', statements: [single] },
+        };
+      }
+    } else {
+      throw this.error('Expected colon after if condition');
     }
-    this.consume('colon');
     const then = this.block();
     let otherwise: Block | undefined;
     if (this.matchKeyword('else')) {
-      if (this.matchColon()) {
-        otherwise = this.block();
-      }
+      if (this.is('colon')) this.consume('colon');
+      otherwise = this.block();
     }
     this.expectKeyword('end');
     this.consume('dot');
@@ -109,13 +116,52 @@ export class Parser {
   }
 
   private repeatStatement(): Statement {
-    const times = this.expression();
-    this.expectKeyword('times');
+    const times = this.expressionUntilTimes();
+    if (this.is('keyword') && this.peek().value === 'times') {
+      this.consume('keyword');
+    } else if (this.is('operator') && this.peek().value === 'times') {
+      this.consume('operator');
+    } else {
+      throw this.error("Expected 'times'");
+    }
     this.consume('colon');
     const body = this.block();
     this.expectKeyword('end');
     this.consume('dot');
     return { kind: 'RepeatStatement', times, body };
+  }
+
+  private expressionUntilTimes(): Expression {
+    let left = this.primary();
+    while (true) {
+      if (this.is('operator')) {
+        if (this.peek().value === 'times' && this.lookaheadType() === 'colon') break;
+        const op = this.consume('operator').value as BinaryOperator;
+        const right = this.primary();
+        left = { kind: 'BinaryExpression', operator: op, left, right };
+        continue;
+      }
+      if (this.matchKeyword('is')) {
+        if (this.is('operator')) {
+          const op = this.consume('operator').value as BinaryOperator;
+          const right = this.primary();
+          left = { kind: 'BinaryExpression', operator: op, left, right };
+          continue;
+        } else if (this.matchKeyword('none')) {
+          left = { kind: 'BinaryExpression', operator: 'equal_to', left, right: { kind: 'NoneLiteral' } };
+          continue;
+        } else {
+          left = { kind: 'BinaryExpression', operator: 'equal_to', left, right: this.primary() };
+          continue;
+        }
+      }
+      break;
+    }
+    return left;
+  }
+
+  private lookaheadType(offset = 1): TokenType {
+    return this.tokens[this.pos + offset]?.type;
   }
 
   private returnStatement(): Statement {
@@ -204,7 +250,13 @@ export class Parser {
     let into;
     if (this.matchKeyword('where')) {
       const qualParts: string[] = [];
-      while (!this.is('dot') && !this.is('newline') && !this.is('indent') && !this.is('dedent')) {
+      while (
+        !this.is('dot') &&
+        !this.is('newline') &&
+        !this.is('indent') &&
+        !this.is('dedent') &&
+        !(this.peek().type === 'keyword' && this.peek().value === 'into')
+      ) {
         qualParts.push(this.consume(this.peek().type).value ?? '');
       }
       qualifier = qualParts.join(' ');

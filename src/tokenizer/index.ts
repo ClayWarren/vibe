@@ -121,7 +121,12 @@ export function tokenize(source: string): Token[] {
         let j = i;
         while (j < line.length && /[\d.]/.test(line[j])) j++;
         const value = line.slice(i, j);
-        tokens.push({ type: 'number', value, line: lineNo + 1, column });
+        if (value.endsWith('.') && value.length > 1) {
+          tokens.push({ type: 'number', value: value.slice(0, -1), line: lineNo + 1, column });
+          tokens.push({ type: 'dot', line: lineNo + 1, column: column + value.length - 1 });
+        } else {
+          tokens.push({ type: 'number', value, line: lineNo + 1, column });
+        }
         i = j;
         continue;
       }
