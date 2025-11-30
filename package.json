@@ -8,14 +8,17 @@
     "dev": "ts-node src/repl.ts",
     "lint": "eslint .",
     "test": "vitest",
-    "format": "prettier . --write"
+    "format": "prettier . --write",
+    "demo": "node --loader ts-node/esm scripts/demo-server.ts"
   },
   "bin": {
     "vcl": "dist/cli/index.js"
   },
   "dependencies": {
+    "body-parser": "^2.2.1",
     "chalk": "^5.6.2",
-    "commander": "^14.0.2"
+    "commander": "^14.0.2",
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
