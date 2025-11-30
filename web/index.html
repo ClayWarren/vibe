@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VCL Playground</title>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>VCL Playground</h1>
+        <div class="controls">
+          <label for="target">Target</label>
+          <select id="target">
+            <option value="ts">TypeScript</option>
+            <option value="rust">Rust</option>
+          </select>
+          <label for="examples">Examples</label>
+          <select id="examples">
+            <option value="">Choose…</option>
+            <option>User profile</option>
+            <option>Agent loop</option>
+          </select>
+          <button id="compile">Compile</button>
+          <div id="status" class="status"></div>
+        </div>
+      </header>
+      <main>
+        <section class="panel">
+          <label for="input">VCL Source</label>
+          <textarea id="input" spellcheck="false"></textarea>
+        </section>
+        <section class="panel">
+          <label>Output</label>
+          <pre id="output"></pre>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

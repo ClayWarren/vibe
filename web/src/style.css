@@ -1,0 +1,97 @@
+:root {
+  font-family: 'SFMono-Regular', 'Menlo', 'Consolas', monospace;
+  background: #0b1221;
+  color: #d8e3ff;
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+h1 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.05em;
+}
+
+.panel {
+  background: linear-gradient(145deg, rgba(25,37,70,0.9), rgba(17,24,45,0.9));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+label {
+  font-size: 12px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+textarea {
+  width: 100%;
+  min-height: 260px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: #eaf2ff;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+pre {
+  width: 100%;
+  min-height: 260px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: #0a0f1a;
+  color: #a5ffb8;
+  padding: 12px;
+  font-size: 13px;
+  overflow: auto;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+button, select {
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08);
+  color: #eaf2ff;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+button:hover { background: rgba(255,255,255,0.16); cursor: pointer; }
+
+.status { font-size: 12px; }
+.status.ok { color: #6ff0a3; }
+.status.error { color: #ff8f9c; }
+
+main {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 16px;
+}
+
+select#examples { min-width: 180px; }
