@@ -117,9 +117,7 @@ export class Parser {
 
   private repeatStatement(): Statement {
     const times = this.expressionUntilTimes();
-    if (this.is('keyword') && this.peek().value === 'times') {
-      this.consume('keyword');
-    } else if (this.is('operator') && this.peek().value === 'times') {
+    if (this.is('operator') && this.peek().value === 'times') {
       this.consume('operator');
     } else {
       throw this.error("Expected 'times'");

@@ -60,3 +60,10 @@ describe('TypeScript emitter', () => {
     const ts = compileTS('let diff = a minus b.');
     expect(ts).toContain('- b');
   });
+
+  it('emits greater_than and less_than from binary', () => {
+    const ts = compileTS(`let c = a greater_than b.
+let d = a less_than b.`);
+    expect(ts).toContain('> b');
+    expect(ts).toContain('< b');
+  });

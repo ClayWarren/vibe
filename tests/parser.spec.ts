@@ -80,3 +80,26 @@ describe('parser statements', () => {
     const ensure = ast.body[1] as any;
     expect(ensure.expression.kind).toBe('EnsureExpression');
   });
+
+  it('parses repeat using operator times token', () => {
+    const ast = parse('repeat 3 times:\n  return none.\nend.');
+    const repeat = ast.body[0] as any;
+    expect(repeat.kind).toBe('RepeatStatement');
+  });
+
+  it('parses is none and default is equality', () => {
+    const ast = parse('ensure value is none.\nensure value is active.');
+    const first = (ast.body[0] as any).expression.condition;
+    const second = (ast.body[1] as any).expression.condition;
+    expect(first.kind).toBe('BinaryExpression');
+    expect(first.operator).toBe('equal_to');
+    expect(second.kind).toBe('BinaryExpression');
+    expect(second.operator).toBe('equal_to');
+  });
+
+  it('parses fetch with into only and without where', () => {
+    const ast = parse('let x = fetch users into list.');
+    const fetch = (ast.body[0] as any).value;
+    expect(fetch.into.name).toBe('list');
+    expect(fetch.qualifier).toBeUndefined();
+  });
