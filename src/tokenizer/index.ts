@@ -25,6 +25,7 @@ const KEYWORDS = new Set([
   'when',
   'if',
   'else',
+  'end',
   'for',
   'each',
   'in',
@@ -45,6 +46,7 @@ const KEYWORDS = new Set([
   'where',
   'into',
   'every',
+  'fetch',
 ]);
 
 const OPERATORS = new Set([

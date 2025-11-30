@@ -125,6 +125,11 @@ export class Parser {
   }
 
   private stopStatement(): Statement {
+    if (this.matchKeyword('with')) {
+      const valueWith = this.expression();
+      this.consume('dot');
+      return { kind: 'StopStatement', value: valueWith };
+    }
     const value = this.expression();
     this.consume('dot');
     return { kind: 'StopStatement', value };
@@ -132,8 +137,11 @@ export class Parser {
 
   private block(): Block {
     const statements: Statement[] = [];
+    this.skipTrivia();
     this.consume('indent');
-    while (!this.is('dedent')) {
+    while (true) {
+      this.skipTrivia();
+      if (this.is('dedent')) break;
       statements.push(this.statement());
     }
     this.consume('dedent');
@@ -155,10 +163,17 @@ export class Parser {
         if (this.is('operator')) {
           opToken = this.consume('operator').value as BinaryOperator;
         } else if (this.matchKeyword('none')) {
-          left = { kind: 'BinaryExpression', operator: 'equal_to', left, right: { kind: 'NoneLiteral' } };
+          left = {
+            kind: 'BinaryExpression',
+            operator: 'equal_to',
+            left,
+            right: { kind: 'NoneLiteral' },
+          };
           continue;
         } else {
-          throw this.error('Expected comparison after \"is\"');
+          const rightDefault = this.primary();
+          left = { kind: 'BinaryExpression', operator: 'equal_to', left, right: rightDefault };
+          continue;
         }
       }
       const right = this.primary();
