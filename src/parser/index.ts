@@ -321,7 +321,13 @@ export class Parser {
   }
 
   private callExpression(): Expression {
-    const callee = this.identifier();
+    let callee = this.identifier();
+    if (this.is('colon') && this.peek(1)?.type === 'colon' && this.peek(2)?.type === 'identifier') {
+      this.consume('colon');
+      this.consume('colon');
+      const tail = this.identifier();
+      callee = { kind: 'Identifier', name: `${callee.name}::${tail.name}` } as any;
+    }
     const args: Expression[] = [];
     if (this.matchKeyword('with')) {
       args.push(this.expression());

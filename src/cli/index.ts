@@ -115,6 +115,15 @@ program
   });
 
 program
+  .command('publish')
+  .description('Publish current module to a registry directory')
+  .option('--registry <dir>', 'registry directory', '.vcl-registry')
+  .action((opts) => {
+    const { publishModule } = require('../module/registry.js');
+    publishModule(process.cwd(), opts.registry);
+  });
+
+program
   .command('run')
   .description('Run a VCL file (interpreter or VM)')
   .argument('<file>', 'VCL source file')

@@ -3,12 +3,14 @@ type FetchFn = (target: string, qualifier?: string) => Promise<unknown> | unknow
 type SendFn = (payload: unknown, target?: unknown) => Promise<void> | void;
 type StoreFn = (value: unknown, target?: string) => Promise<void> | void;
 type LogFn = (value: unknown) => void;
+type NowFn = () => number;
 
 export type RuntimeAdapters = {
   fetch?: FetchFn;
   send?: SendFn;
   store?: StoreFn;
   log?: LogFn;
+  now?: NowFn;
 };
 
 const memory: Record<string, unknown[]> = {};
@@ -21,6 +23,7 @@ const defaultAdapters: Required<RuntimeAdapters> = {
     (memory[target] as unknown[]).push(value);
   },
   log: (v) => console.log(v),
+  now: () => Date.now(),
 };
 
 let adapters: Required<RuntimeAdapters> = { ...defaultAdapters };
@@ -45,6 +48,10 @@ export function log(message: unknown) {
   adapters.log(message);
 }
 
+export function now() {
+  return adapters.now();
+}
+
 export function ensure(condition: unknown) {
   if (!condition) throw new Error('ensure failed');
 }
@@ -62,6 +69,7 @@ export const runtime = {
   send,
   store,
   log,
+  now,
   ensure,
   validate,
   expect,

@@ -15,7 +15,7 @@ describe('module resolution', () => {
 
   it('loads stdlib stub', () => {
     const mod = loadModule('stdlib', process.cwd());
-    expect(mod.src).toContain('stdlib');
+    expect(mod.src).toContain('ensure_true');
   });
 
   it('links imported module with namespacing', () => {
