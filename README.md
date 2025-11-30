@@ -16,10 +16,15 @@ Early scaffold for the VCL v1.0 compiler and tooling.
 ## Quick start
 
 ```bash
-nvm use 20  # recommended
+nvm use 24   # or >=20
 pnpm install
 pnpm run build
-node dist/cli/index.js compile examples/user_profile.vcl --target ts
+# Compile to TypeScript (links stdlib)
+node dist/cli/index.js compile examples/user_profile.vcl --target ts --with-stdlib
+# Run via interpreter
+node dist/cli/index.js run examples/webapp.vcl --event "http GET /api/health"
+# Run via VM
+node dist/cli/index.js run examples/webapp.vcl --event "http GET /api/health" --vm
 ```
 
 ## Web playground
@@ -38,10 +43,12 @@ pnpm run dev   # opens VCL playground with live compile to TS/Rust
 
 ## Docs
 
-- See `docs/README.md` for a hub to the language philosophy, stdlib draft, runtime reference, and roadmap.
+- See `docs/README.md` for a hub to the language philosophy, stdlib, runtime reference, and roadmap.
 
 ## Status
-- Tokenizer hardened (Chevrotain-based; strings, multi-word ops, indentation).
-- Parser covers fetch/get/send/store and control constructs.
-- TypeScript transpiler emits runnable code; Rust emitter exists but CLI currently uses a placeholder output.
-- Runtime interpreter + Express demo server; end-to-end tests included.
+- Tokenizer hardened (Chevrotain-based; strings, multi-word ops, indentation; multiline strings, imports).
+- Parser covers fetch/get/send/store, scheduling, functions, imports with namespacing.
+- Transpilers: runnable TypeScript/Rust emitters; WASM text stub; optional sourcemap.
+- VM + interpreter parity, pluggable runtime adapters; CLI `run --vm` available.
+- Module system: linker with namespacing, `vcl install/publish` (registry-aware), `vcl format`/`lint`.
+- REPL prints TS preview; demo server remains in `scripts/demo-server.ts`.
