@@ -4,7 +4,7 @@ export function emitRust(node: IRNode, indent = 0): string {
   const pad = '  '.repeat(indent);
   switch (node.kind) {
     case 'IRProgram':
-      return node.body.map(n => emitRust(n, indent)).join('\n');
+      return node.body.map((n) => emitRust(n, indent)).join('\n');
     case 'IRLet':
       return `${pad}let ${node.name} = ${emitRust(node.value, indent)};`;
     case 'IRReturn':
@@ -12,22 +12,22 @@ export function emitRust(node: IRNode, indent = 0): string {
     case 'IRStop':
       return `${pad}return Err(anyhow::anyhow!(${emitRust(node.value, indent)}));`;
     case 'IRIf': {
-      const thenPart = node.then.map(n => emitRust(n, indent + 1)).join('\n');
-      const elsePart = node.otherwise?.map(n => emitRust(n, indent + 1)).join('\n');
+      const thenPart = node.then.map((n) => emitRust(n, indent + 1)).join('\n');
+      const elsePart = node.otherwise?.map((n) => emitRust(n, indent + 1)).join('\n');
       const elseBlock = elsePart ? `\n${pad}} else {\n${elsePart}\n${pad}}` : '';
       return `${pad}if ${emitRust(node.condition, indent)} {\n${thenPart}\n${pad}}${elseBlock}`;
     }
     case 'IRForEach': {
-      const body = node.body.map(n => emitRust(n, indent + 1)).join('\n');
+      const body = node.body.map((n) => emitRust(n, indent + 1)).join('\n');
       return `${pad}for ${node.item} in ${emitRust(node.collection, indent)} {\n${body}\n${pad}}`;
     }
     case 'IRRepeat': {
-      const body = node.body.map(n => emitRust(n, indent + 1)).join('\n');
+      const body = node.body.map((n) => emitRust(n, indent + 1)).join('\n');
       const times = emitRust(node.times, indent);
       return `${pad}for _i in 0..${times} {\n${body}\n${pad}}`;
     }
     case 'IRCall':
-      return `${pad}${node.callee}(${node.args.map(a => emitRust(a, indent)).join(', ')})`;
+      return `${pad}${node.callee}(${node.args.map((a) => emitRust(a, indent)).join(', ')})`;
     case 'IRFetch':
       return `${pad}runtime::fetch(${JSON.stringify(node.target)}, ${node.qualifier ? JSON.stringify(node.qualifier) : 'None'})`;
     case 'IREnsure':

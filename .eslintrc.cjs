@@ -5,13 +5,13 @@ module.exports = {
   extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier'],
   env: {
     node: true,
-    es2020: true
+    es2020: true,
   },
   parserOptions: {
-    sourceType: 'module'
+    sourceType: 'module',
   },
   rules: {
     '@typescript-eslint/consistent-type-imports': 'warn',
-    '@typescript-eslint/no-explicit-any': 'off'
-  }
+    '@typescript-eslint/no-explicit-any': 'off',
+  },
 };

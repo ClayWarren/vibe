@@ -196,7 +196,8 @@ export class Parser {
   private fetchExpression(): Expression {
     const parts: string[] = [];
     while (this.is('identifier') || this.is('keyword')) {
-      if (this.peek().type === 'keyword' && ['where', 'into'].includes(this.peek().value ?? '')) break;
+      if (this.peek().type === 'keyword' && ['where', 'into'].includes(this.peek().value ?? ''))
+        break;
       parts.push(this.consume(this.peek().type).value ?? '');
     }
     let qualifier: string | undefined;
@@ -291,7 +292,9 @@ export class Parser {
     return { kind: 'ExpressionStatement', expression: { kind: 'CallExpression', callee, args } };
   }
 
-  private ensureLike(kind: 'EnsureExpression' | 'ValidateExpression' | 'ExpectExpression'): Statement {
+  private ensureLike(
+    kind: 'EnsureExpression' | 'ValidateExpression' | 'ExpectExpression'
+  ): Statement {
     const condition = this.expression();
     this.consume('dot');
     return { kind: 'ExpressionStatement', expression: { kind, condition } as any };

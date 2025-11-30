@@ -10,10 +10,10 @@ const sample = readFileSync('examples/user_profile.vcl', 'utf8');
 describe('VCL pipeline', () => {
   it('tokenizes indentation and dots', () => {
     const tokens = tokenize(sample);
-    const dotCount = tokens.filter(t => t.type === 'dot').length;
+    const dotCount = tokens.filter((t) => t.type === 'dot').length;
     expect(dotCount).toBeGreaterThan(3);
-    expect(tokens.some(t => t.type === 'indent')).toBe(true);
-    expect(tokens.some(t => t.type === 'dedent')).toBe(true);
+    expect(tokens.some((t) => t.type === 'indent')).toBe(true);
+    expect(tokens.some((t) => t.type === 'dedent')).toBe(true);
   });
 
   it('parses into an AST program', () => {

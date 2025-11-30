@@ -26,13 +26,13 @@ h1 {
 }
 
 .panel {
-  background: linear-gradient(145deg, rgba(25,37,70,0.9), rgba(17,24,45,0.9));
-  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(145deg, rgba(25, 37, 70, 0.9), rgba(17, 24, 45, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 16px;
   display: grid;
   gap: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 label {
@@ -46,8 +46,8 @@ textarea {
   width: 100%;
   min-height: 260px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
   color: #eaf2ff;
   padding: 12px;
   font-size: 14px;
@@ -59,7 +59,7 @@ pre {
   width: 100%;
   min-height: 260px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   background: #0a0f1a;
   color: #a5ffb8;
   padding: 12px;
@@ -73,20 +73,30 @@ pre {
   align-items: center;
 }
 
-button, select {
+button,
+select {
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
   color: #eaf2ff;
   padding: 8px 12px;
   font-size: 13px;
 }
 
-button:hover { background: rgba(255,255,255,0.16); cursor: pointer; }
+button:hover {
+  background: rgba(255, 255, 255, 0.16);
+  cursor: pointer;
+}
 
-.status { font-size: 12px; }
-.status.ok { color: #6ff0a3; }
-.status.error { color: #ff8f9c; }
+.status {
+  font-size: 12px;
+}
+.status.ok {
+  color: #6ff0a3;
+}
+.status.error {
+  color: #ff8f9c;
+}
 
 main {
   display: grid;
@@ -94,4 +104,6 @@ main {
   gap: 16px;
 }
 
-select#examples { min-width: 180px; }
+select#examples {
+  min-width: 180px;
+}

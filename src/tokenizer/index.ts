@@ -119,7 +119,7 @@ export function tokenize(source: string): Token[] {
       }
       if (/\d/.test(ch)) {
         let j = i;
-        while (j < line.length && /[\d\.]/.test(line[j])) j++;
+        while (j < line.length && /[\d.]/.test(line[j])) j++;
         const value = line.slice(i, j);
         tokens.push({ type: 'number', value, line: lineNo + 1, column });
         i = j;

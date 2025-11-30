@@ -48,11 +48,19 @@ function lowerStatement(stmt: Statement): IRNode {
         body: stmt.body.statements.map(lowerStatement),
       };
     case 'FunctionDef':
-      return { kind: 'IRLet', name: stmt.name.name, value: { kind: 'IRProgram', body: stmt.body.statements.map(lowerStatement) } };
+      return {
+        kind: 'IRLet',
+        name: stmt.name.name,
+        value: { kind: 'IRProgram', body: stmt.body.statements.map(lowerStatement) },
+      };
     case 'ExpressionStatement':
       return lowerExpression(stmt.expression);
     case 'EventHandler':
-      return { kind: 'IRLet', name: `on_${stmt.event}`, value: { kind: 'IRProgram', body: stmt.body.statements.map(lowerStatement) } };
+      return {
+        kind: 'IRLet',
+        name: `on_${stmt.event}`,
+        value: { kind: 'IRProgram', body: stmt.body.statements.map(lowerStatement) },
+      };
     default:
       throw new Error(`Unhandled statement ${(stmt as Statement).kind}`);
   }

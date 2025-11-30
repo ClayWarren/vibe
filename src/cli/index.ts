@@ -6,10 +6,7 @@ import { lowerProgram } from '../ir/index.js';
 import { emitTypeScript } from '../transpilers/typescript.js';
 
 const program = new Command();
-program
-  .name('vcl')
-  .description('Vibe Coding Language compiler')
-  .version('0.1.0');
+program.name('vcl').description('Vibe Coding Language compiler').version('0.1.0');
 
 program
   .command('compile')
