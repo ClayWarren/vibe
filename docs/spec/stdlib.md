@@ -4,7 +4,8 @@
 - `fetch <target> [where <qualifier>] [into <ident>]` → runtime.fetch(target, qualifier)
 - `send <payload> [to <target>]` → runtime.send(payload, target?)
 - `store <value> [into <target>]` → runtime.store(value, target?)
-- `log <value>` (via runtime.log, implied by transpilers)
+- `log <value>` → runtime.log
+- `now` → runtime.now (returns epoch ms)
 
 ## Control/safety
 - `ensure/validate/expect <condition>` throw if falsy.
