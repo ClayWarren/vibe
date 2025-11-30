@@ -34,3 +34,14 @@ describe('tokenizer', () => {
     expect(dots.length).toBeGreaterThan(0);
   });
 });
+
+  it('adds trailing dedent at EOF', () => {
+    const tokens = tokenize('define f:\n  let a = 1.');
+    const dedents = tokens.filter((t) => t.type === 'dedent');
+    expect(dedents.length).toBeGreaterThan(0);
+  });
+
+  it('skips comment lines', () => {
+    const tokens = tokenize('# comment only');
+    expect(tokens.some((t) => t.type !== 'eof')).toBe(false);
+  });

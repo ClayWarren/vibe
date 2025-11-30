@@ -308,14 +308,6 @@ export class Parser {
     return false;
   }
 
-  private matchColon(): boolean {
-    if (this.is('colon')) {
-      this.pos++;
-      return true;
-    }
-    return false;
-  }
-
   private expectKeyword(value: string) {
     const tok = this.peek();
     if (tok.type !== 'keyword' || tok.value !== value) {

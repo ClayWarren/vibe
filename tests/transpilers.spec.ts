@@ -39,4 +39,24 @@ describe('TypeScript emitter', () => {
     expect(ts).toContain('!==');
     expect(ts).toContain('/ b');
   });
+  it('emits divided_by and less_than ops', () => {
+    const ts = compileTS(`let ratio = a divided_by b.\nlet small = a less_than b.`);
+    expect(ts).toContain('/ b');
+    expect(ts).toContain('< b');
+  });
+
+  it('handles unknown binary op gracefully', () => {
+    const ts = emitTypeScript({
+      kind: 'IRBinary',
+      op: 'custom_op',
+      left: { kind: 'IRLiteral', value: 1 },
+      right: { kind: 'IRLiteral', value: 2 },
+    } as any);
+    expect(ts).toContain('custom_op');
+  });
 });
+
+  it('emits minus operator', () => {
+    const ts = compileTS('let diff = a minus b.');
+    expect(ts).toContain('- b');
+  });

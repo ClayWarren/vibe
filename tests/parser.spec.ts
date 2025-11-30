@@ -50,3 +50,33 @@ describe('parser statements', () => {
     expect(ifStmt.condition.operator).toBe('equal_to');
   });
 });
+
+  it('parses inline if without else', () => {
+    const ast = parse('if true: return 1.');
+    const ifStmt = ast.body[0] as any;
+    expect(ifStmt.then.statements[0].kind).toBe('ReturnStatement');
+    expect(ifStmt.otherwise).toBeUndefined();
+  });
+
+  it('parses repeat with expression times', () => {
+    const ast = parse('repeat 1 plus 2 times:\n  return none.\nend.');
+    const repeat = ast.body[0] as any;
+    expect(repeat.kind).toBe('RepeatStatement');
+  });
+
+  ;
+
+  it('parses call without args and boolean/none literals', () => {
+    const ast = parse('call ping.\nlet f = false.\nlet n = none.');
+    expect((ast.body[0] as any).kind).toBe('ExpressionStatement');
+    expect((ast.body[1] as any).value.kind).toBe('BooleanLiteral');
+    expect((ast.body[2] as any).value.kind).toBe('NoneLiteral');
+  });
+
+  it('parses stop without with and binary after is operator', () => {
+    const ast = parse('stop error.\nensure value is not_equal_to none.');
+    const stop = ast.body[0] as any;
+    expect(stop.kind).toBe('StopStatement');
+    const ensure = ast.body[1] as any;
+    expect(ensure.expression.kind).toBe('EnsureExpression');
+  });
