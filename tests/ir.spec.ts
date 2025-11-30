@@ -38,4 +38,10 @@ describe('IR lowering', () => {
     expect(bodyKinds).toContain('IRRepeat');
     expect(bodyKinds).toContain('IRIf');
   });
+
+  it('captures stop statements in IR', () => {
+    const ast = parse('stop with "boom".');
+    const ir = lowerProgram(ast);
+    expect((ir as any).body[0].kind).toBe('IRStop');
+  });
 });

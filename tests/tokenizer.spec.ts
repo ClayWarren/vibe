@@ -25,4 +25,12 @@ describe('tokenizer', () => {
     expect(fetchTok?.type).toBe('keyword');
     expect(tokens.some((t) => t.value === 'into')).toBe(true);
   });
+
+  it('splits trailing dot after number', () => {
+    const tokens = tokenize('let x = 3.');
+    const num = tokens.find((t) => t.type === 'number');
+    const dots = tokens.filter((t) => t.type === 'dot');
+    expect(num?.value).toBe('3');
+    expect(dots.length).toBeGreaterThan(0);
+  });
 });

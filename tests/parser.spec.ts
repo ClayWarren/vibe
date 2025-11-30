@@ -32,6 +32,15 @@ describe('parser statements', () => {
     expect(fetch.into.name).toBe('record');
   });
 
+  it('parses event handler names and inline if', () => {
+    const ast = parse(`when user logs_in:\n  stop with "no".\nend.\nif ok: return ok.`);
+    const event = ast.body[0] as any;
+    expect(event.kind).toBe('EventHandler');
+    expect(event.event).toContain('logs_in');
+    const inlineIf = ast.body[1] as any;
+    expect(inlineIf.then.statements[0].kind).toBe('ReturnStatement');
+  });
+
   it('parses call expressions with with-arg and default is equality', () => {
     const ast = parse('call do_stuff with thing.\nif user is active: return user.');
     const call = ast.body[0] as any;

@@ -26,4 +26,17 @@ describe('TypeScript emitter', () => {
     expect(ts).toContain('runtime.validate');
     expect(ts).toContain('runtime.expect');
   });
+
+  it('emits stop with error and binary ops', () => {
+    const ts = compileTS('stop with "bad".\nlet y = 2 plus 3 times 4.');
+    expect(ts).toContain('throw new Error');
+    expect(ts).toContain('2 + 3 * 4');
+  });
+
+  it('maps comparison operators', () => {
+    const ts = compileTS('let ok = a greater_than b.\nlet neq = a not_equal_to b.\nlet div = a divided_by b.');
+    expect(ts).toContain('>');
+    expect(ts).toContain('!==');
+    expect(ts).toContain('/ b');
+  });
 });

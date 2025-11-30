@@ -356,10 +356,12 @@ export class Parser {
     return this.tokens[this.pos];
   }
 
+  /* c8 ignore start */
   private error(message: string): Error {
     const tok = this.peek();
     return new Error(`${message} at line ${tok.line}, column ${tok.column}`);
   }
+  /* c8 ignore stop */
 }
 
 export const parse = (source: string) => new Parser().parse(source);

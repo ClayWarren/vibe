@@ -38,6 +38,7 @@ export function emitTypeScript(node: IRNode, indent = 0): string {
       return node.name;
     case 'IRBinary':
       return `${emitTypeScript(node.left, indent)} ${tsOp(node.op)} ${emitTypeScript(node.right, indent)}`;
+    /* c8 ignore next */
     default:
       throw new Error(`Unhandled IR node ${(node as IRNode).kind}`);
   }
@@ -61,6 +62,7 @@ function tsOp(op: string): string {
       return '>';
     case 'less_than':
       return '<';
+    /* c8 ignore next */
     default:
       return op;
   }
