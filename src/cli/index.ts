@@ -80,6 +80,26 @@ program
   });
 
 program
+  .command('check')
+  .description('Type-check a VCL file (alias of lint, reserved for stricter rules)')
+  .argument('<file>', 'VCL source file')
+  .action(async (file) => {
+    const { checkProgram } = await import('../semantic/check.js');
+    try {
+      const src = readFileSync(file, 'utf8');
+      const ast = parse(src);
+      const issues = checkProgram(ast);
+      if (issues.length) {
+        issues.forEach((i: any) => console.error(`check: ${i.message}`));
+        process.exitCode = 1;
+      }
+    } catch (err) {
+      console.error((err as Error).message);
+      process.exitCode = 1;
+    }
+  });
+
+program
   .command('lsp')
   .description('Start a minimal LSP-like stub (completion only)')
   .action(async () => {
@@ -150,6 +170,36 @@ program
       runEvent(linked, opts.event, { data: {} }).then((r) => {
         console.log(JSON.stringify(r, null, 2));
       });
+    }
+  });
+
+program
+  .command('test')
+  .description('Lightweight test runner: execute a handler and optionally assert its result')
+  .argument('<file>', 'VCL source file')
+  .option('--event <name>', 'event name to invoke', 'http GET /')
+  .option('--expect <json>', 'expected JSON result (stringified)')
+  .action(async (file, opts) => {
+    try {
+      const src = readFileSync(file, 'utf8');
+      const ast = parse(src);
+      const { linkProgram } = await import('../module/linker.js');
+      const linked = linkProgram(ast, process.cwd());
+      const result = await runEvent(linked, opts.event, { data: {} });
+      if (opts.expect) {
+        const expected = JSON.parse(opts.expect);
+        const actual = result;
+        const pass = JSON.stringify(actual) === JSON.stringify(expected);
+        if (!pass) {
+          console.error('test: expected', JSON.stringify(expected), 'but got', JSON.stringify(actual));
+          process.exitCode = 1;
+          return;
+        }
+      }
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      console.error((err as Error).message);
+      process.exitCode = 1;
     }
   });
 
