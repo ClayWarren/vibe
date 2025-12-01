@@ -2,9 +2,13 @@
 
 ## Prereqs
 - Node >= 20 (tested on 24)
-- pnpm (corepack recommended)
 
-## Install & build
+## Install CLI
+```bash
+npm i -g @claywarren/vcl
+```
+
+Or from source (if you cloned the repo):
 ```bash
 nvm use 24
 pnpm install

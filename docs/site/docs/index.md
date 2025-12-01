@@ -7,7 +7,11 @@ VCL is an indentation-first, English-like language that compiles to TypeScript, 
 - Multiple targets: TS, Rust, WASM stub, VM/interpreter
 - Module system with namespacing and registry publish/install
 
-📦 Install & build
+📦 Install
+```bash
+npm i -g @claywarren/vcl
+```
+or from source (repo clone):
 ```bash
 pnpm install
 pnpm run build
