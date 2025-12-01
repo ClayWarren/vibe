@@ -31,8 +31,20 @@ export function emitTypeDeclarations(node: IRNode): string {
   }
   const lines = [
     '// Auto-generated VCL declarations',
-    'export type VclHandler = (...args: any[]) => Promise<any>;',
-    ...names.map((n) => `export function ${n}(...args: any[]): Promise<any>;`),
+    'export interface VclRuntime {',
+    '  fetch?: (target: string, qualifier?: string) => Promise<any> | any;',
+    '  send?: (payload: any, target?: string) => Promise<any> | any;',
+    '  store?: (value: any, target?: string) => Promise<any> | any;',
+    '  log?: (...args: any[]) => void;',
+    '  [key: string]: any;',
+    '}',
+    'export interface VclContext {',
+    '  runtime?: VclRuntime;',
+    '  data?: Record<string, any>;',
+    '  [key: string]: any;',
+    '}',
+    'export type VclHandler = (ctx?: VclContext) => Promise<any>;',
+    ...names.map((n) => `export function ${n}(ctx?: VclContext): Promise<any>;`),
   ];
   return lines.join('\n') + '\n';
 }

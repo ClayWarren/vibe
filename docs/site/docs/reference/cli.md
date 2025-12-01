@@ -6,7 +6,7 @@ The `vcl` CLI lives in `dist/cli/index.js` and is wired via Commander. Use `pnpm
 
 - `vcl compile <file> [--target ts|rust] [--sourcemap <file>] [--dts <file>] [--with-stdlib]`
   - Parses, links imports, lowers to IR, and emits TS (default) or Rust.
-  - `--dts <file>` emits a minimal declaration file for TS consumers.
+  - `--dts <file>` emits declarations with `VclRuntime`, `VclContext`, and handler signatures `(ctx?: VclContext) => Promise<any>`.
 - `vcl run <file> [--event <name>] [--vm]`
   - Runs an event handler either via interpreter (default) or VM (`--vm`).
 - `vcl repl`
