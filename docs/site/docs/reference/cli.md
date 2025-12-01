@@ -18,8 +18,8 @@ The `vcl` CLI lives in `dist/cli/index.js` and is wired via Commander. Use `pnpm
   - Alias of `lint`; reserved for stricter rules as the checker grows.
 - `vcl format <file> [--write]`
   - Formats VCL (enforces trailing dots / indent).
-- `vcl test <file> [--event <name>] [--expect <json>]`
-  - Runs a handler via the interpreter; optionally compares result to expected JSON.
+- `vcl test <file> [--event <name>] [--handler <name>] [--data <json>] [--expect <json>]`
+  - Runs a handler via the interpreter; pass data context with `--data`, optionally assert the JSON result.
 - `vcl install <name> [--version <range>] [--registry <dir|url>]`
   - Fetches and extracts a VCL module into `vcl_modules/<name>/` and updates `vcl.json`.
 - `vcl publish [--registry <dir>]`

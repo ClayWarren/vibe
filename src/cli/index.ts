@@ -177,7 +177,9 @@ program
   .command('test')
   .description('Lightweight test runner: execute a handler and optionally assert its result')
   .argument('<file>', 'VCL source file')
-  .option('--event <name>', 'event name to invoke', 'http GET /')
+  .option('--event <name>', 'event name to invoke', 'on_http_GET_api_health')
+  .option('--handler <name>', 'explicit handler name to invoke (overrides --event)')
+  .option('--data <json>', 'data context (JSON) passed to the handler', '{}')
   .option('--expect <json>', 'expected JSON result (stringified)')
   .action(async (file, opts) => {
     try {
@@ -185,7 +187,9 @@ program
       const ast = parse(src);
       const { linkProgram } = await import('../module/linker.js');
       const linked = linkProgram(ast, process.cwd());
-      const result = await runEvent(linked, opts.event, { data: {} });
+      const eventName = opts.handler || opts.event;
+      const data = JSON.parse(opts.data ?? '{}');
+      const result = await runEvent(linked, eventName, { data });
       if (opts.expect) {
         const expected = JSON.parse(opts.expect);
         const actual = result;
