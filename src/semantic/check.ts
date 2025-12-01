@@ -122,11 +122,21 @@ function typeExpr(expr: Expression, scope: Map<string, Type>, issues: SemanticIs
       }
       return 'unknown';
     case 'SendExpression':
-      typeExpr(expr.payload, scope, issues);
+      {
+        const t = typeExpr(expr.payload, scope, issues);
+        if (t === 'none') {
+          issues.push({ message: 'send payload should not be none' });
+        }
+      }
       if (expr.target) typeExpr(expr.target, scope, issues);
       return 'unknown';
     case 'StoreExpression':
-      typeExpr(expr.value, scope, issues);
+      {
+        const t = typeExpr(expr.value, scope, issues);
+        if (t === 'none') {
+          issues.push({ message: 'store value should not be none' });
+        }
+      }
       if (expr.target) scope.set(expr.target.name, 'unknown');
       return 'unknown';
     case 'EnsureExpression':

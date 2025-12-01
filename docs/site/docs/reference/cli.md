@@ -13,7 +13,9 @@ The `vcl` CLI lives in `dist/cli/index.js` and is wired via Commander. Use `pnpm
 - `vcl format <file> [--write]`
   - Emits formatted VCL (enforces periods/indent). Writes in-place with `--write`.
 - `vcl lint <file>`
-  - Syntax + simple semantic checks (undefined identifiers, etc.).
+  - Syntax + basic semantic checks (undefined identifiers, simple type checks, effect misuse).
+- `vcl check <file>`
+  - Alias of `lint`; reserved for stricter rules as the checker grows.
 - `vcl install <name> [--version <range>] [--registry <dir|url>]`
   - Fetches and extracts a VCL module into `vcl_modules/<name>/` and updates `vcl.json`.
 - `vcl publish [--registry <dir>]`
