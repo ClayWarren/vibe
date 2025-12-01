@@ -2,8 +2,8 @@
 
 Features:
 - Syntax highlighting for `.vcl`
-- Keyword completions
-- Commands: format, lint, compile-to-TS (`VCL: Format File`, `VCL: Lint File`, `VCL: Compile to TypeScript`)
+- LSP server: diagnostics via `vcl lint`, keyword completions, format provider (calls `vcl format`)
+- Command: compile-to-TS (`VCL: Compile to TypeScript`)
 
 Requirements:
 - Workspace built with `pnpm run build` so `dist/cli/index.js` exists.
