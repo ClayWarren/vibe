@@ -126,6 +126,10 @@ function typeExpr(expr: Expression, scope: Map<string, Type>, issues: SemanticIs
       if (expr.into) {
         scope.set(expr.into.name, 'unknown');
       }
+      // Basic shape check
+      if (expr.qualifier && typeof expr.qualifier !== 'string') {
+        issues.push({ message: 'fetch qualifier should be a string', severity: opts.strict ? 'error' : 'warning' });
+      }
       return 'unknown';
     case 'SendExpression':
       {
@@ -133,8 +137,13 @@ function typeExpr(expr: Expression, scope: Map<string, Type>, issues: SemanticIs
         if (t === 'none') {
           issues.push({ message: 'send payload should not be none', severity: opts.strict ? 'error' : 'warning' });
         }
+        if (expr.target) {
+          const tt = typeExpr(expr.target, scope, issues, opts);
+          if (!isStringish(tt)) {
+            issues.push({ message: 'send target should be string/unknown', severity: opts.strict ? 'error' : 'warning' });
+          }
+        }
       }
-      if (expr.target) typeExpr(expr.target, scope, issues, opts);
       return 'unknown';
     case 'StoreExpression':
       {
@@ -196,4 +205,8 @@ function isNumericish(t: Type): boolean {
 
 function isBoolish(t: Type): boolean {
   return t === 'boolean' || t === 'unknown';
+}
+
+function isStringish(t: Type): boolean {
+  return t === 'string' || t === 'unknown';
 }
