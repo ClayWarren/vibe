@@ -47,7 +47,7 @@ export default defineConfig({
           text: 'Guides',
           items: [
             { text: 'Overview', link: '/guides/' },
-            { text: 'Quickstart', link: '/quickstart' },
+            { text: 'Quickstart', link: '/guides/quickstart' },
             { text: 'Playground', link: '/playground' },
             { text: 'Next.js Adapter (coming soon)', link: '/guides/nextjs' },
             { text: 'CLI Workflows', link: '/cli' },
