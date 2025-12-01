@@ -1,6 +1,6 @@
 import type { Program, Statement, Expression, BinaryOperator } from '../types/ast.js';
 
-export type SemanticIssue = { message: string };
+export type SemanticIssue = { message: string; severity: Severity };
 
 const BUILTINS = new Set([
   'body',
@@ -29,16 +29,18 @@ type Type =
   | 'record'
   | 'unknown';
 
-export function checkProgram(program: Program): SemanticIssue[] {
+type Severity = 'warning' | 'error';
+
+export function checkProgram(program: Program, opts: { strict?: boolean } = {}): SemanticIssue[] {
   const issues: SemanticIssue[] = [];
   const scope = new Map<string, Type>();
   // mark builtins as unknown (treat as present)
   for (const b of BUILTINS) scope.set(b, 'unknown');
-  walkStatements(program.body, scope, issues);
+  walkStatements(program.body, scope, issues, opts);
   return issues;
 }
 
-function walkStatements(stmts: Statement[], scope: Map<string, Type>, issues: SemanticIssue[]) {
+function walkStatements(stmts: Statement[], scope: Map<string, Type>, issues: SemanticIssue[], opts: { strict?: boolean }) {
   for (const st of stmts) {
     switch (st.kind) {
       case 'ImportStatement':
@@ -47,51 +49,51 @@ function walkStatements(stmts: Statement[], scope: Map<string, Type>, issues: Se
         break;
       case 'LetStatement':
         {
-          const t = typeExpr(st.value, scope, issues);
+          const t = typeExpr(st.value, scope, issues, opts);
           scope.set(st.id.name, t);
         }
         break;
       case 'ReturnStatement':
-        if (st.value) typeExpr(st.value, scope, issues);
+        if (st.value) typeExpr(st.value, scope, issues, opts);
         break;
       case 'StopStatement':
-        typeExpr(st.value, scope, issues);
+        typeExpr(st.value, scope, issues, opts);
         break;
       case 'IfStatement': {
-        const condType = typeExpr(st.condition, scope, issues);
+        const condType = typeExpr(st.condition, scope, issues, opts);
         if (!isBoolish(condType)) {
-          issues.push({ message: 'Condition should be boolean' });
+          issues.push({ message: 'Condition should be boolean', severity: opts.strict ? 'error' : 'warning' });
         }
         const thenScope = new Map(scope);
-        walkStatements(st.then.statements, thenScope, issues);
-        if (st.otherwise) walkStatements(st.otherwise.statements, new Map(scope), issues);
+        walkStatements(st.then.statements, thenScope, issues, opts);
+        if (st.otherwise) walkStatements(st.otherwise.statements, new Map(scope), issues, opts);
         break;
       }
       case 'ForEachStatement': {
-        typeExpr(st.collection, scope, issues);
+        typeExpr(st.collection, scope, issues, opts);
         const loopScope = new Map(scope);
         loopScope.set(st.item.name, 'unknown');
-        walkStatements(st.body.statements, loopScope, issues);
+        walkStatements(st.body.statements, loopScope, issues, opts);
         break;
       }
       case 'RepeatStatement':
         {
-          const t = typeExpr(st.times, scope, issues);
+          const t = typeExpr(st.times, scope, issues, opts);
           if (t !== 'number' && t !== 'unknown') {
-            issues.push({ message: 'repeat times should be a number' });
+            issues.push({ message: 'repeat times should be a number', severity: opts.strict ? 'error' : 'warning' });
           }
-          walkStatements(st.body.statements, new Map(scope), issues);
+          walkStatements(st.body.statements, new Map(scope), issues, opts);
         }
         break;
       case 'FunctionDef':
         scope.set(st.name.name, 'unknown');
-        walkStatements(st.body.statements, new Map(scope), issues);
+        walkStatements(st.body.statements, new Map(scope), issues, opts);
         break;
       case 'EventHandler':
-        walkStatements(st.body.statements, new Map(scope), issues);
+        walkStatements(st.body.statements, new Map(scope), issues, opts);
         break;
       case 'ExpressionStatement':
-        typeExpr(st.expression, scope, issues);
+        typeExpr(st.expression, scope, issues, opts);
         break;
       default:
         break;
@@ -99,9 +101,12 @@ function walkStatements(stmts: Statement[], scope: Map<string, Type>, issues: Se
   }
 }
 
-function typeExpr(expr: Expression, scope: Map<string, Type>, issues: SemanticIssue[]): Type {
+function typeExpr(expr: Expression, scope: Map<string, Type>, issues: SemanticIssue[], opts: { strict?: boolean }): Type {
   switch (expr.kind) {
     case 'Identifier':
+      if (!scope.has(expr.name) && opts.strict) {
+        issues.push({ message: `Undefined identifier "${expr.name}"`, severity: 'error' });
+      }
       return scope.get(expr.name) ?? 'unknown';
     case 'NumberLiteral':
       return 'number';
@@ -112,10 +117,10 @@ function typeExpr(expr: Expression, scope: Map<string, Type>, issues: SemanticIs
     case 'NoneLiteral':
       return 'none';
     case 'BinaryExpression':
-      return typeBinary(expr.operator, expr.left, expr.right, scope, issues);
+      return typeBinary(expr.operator, expr.left, expr.right, scope, issues, opts);
     case 'CallExpression':
-      typeExpr(expr.callee, scope, issues);
-      expr.args.forEach((a) => typeExpr(a, scope, issues));
+      typeExpr(expr.callee, scope, issues, opts);
+      expr.args.forEach((a) => typeExpr(a, scope, issues, opts));
       return 'unknown';
     case 'FetchExpression':
       if (expr.into) {
@@ -124,18 +129,18 @@ function typeExpr(expr: Expression, scope: Map<string, Type>, issues: SemanticIs
       return 'unknown';
     case 'SendExpression':
       {
-        const t = typeExpr(expr.payload, scope, issues);
+        const t = typeExpr(expr.payload, scope, issues, opts);
         if (t === 'none') {
-          issues.push({ message: 'send payload should not be none' });
+          issues.push({ message: 'send payload should not be none', severity: opts.strict ? 'error' : 'warning' });
         }
       }
-      if (expr.target) typeExpr(expr.target, scope, issues);
+      if (expr.target) typeExpr(expr.target, scope, issues, opts);
       return 'unknown';
     case 'StoreExpression':
       {
-        const t = typeExpr(expr.value, scope, issues);
+        const t = typeExpr(expr.value, scope, issues, opts);
         if (t === 'none') {
-          issues.push({ message: 'store value should not be none' });
+          issues.push({ message: 'store value should not be none', severity: opts.strict ? 'error' : 'warning' });
         }
       }
       if (expr.target) scope.set(expr.target.name, 'unknown');
@@ -144,9 +149,12 @@ function typeExpr(expr: Expression, scope: Map<string, Type>, issues: SemanticIs
     case 'ValidateExpression':
     case 'ExpectExpression':
       {
-        const cond = typeExpr((expr as any).condition, scope, issues);
+        const cond = typeExpr((expr as any).condition, scope, issues, opts);
         if (!isBoolish(cond)) {
-          issues.push({ message: `${expr.kind.replace('Expression', '')} expects a boolean condition` });
+          issues.push({
+            message: `${expr.kind.replace('Expression', '')} expects a boolean condition`,
+            severity: opts.strict ? 'error' : 'warning',
+          });
         }
       }
       return 'unknown';
@@ -161,15 +169,16 @@ function typeBinary(
   right: Expression,
   scope: Map<string, Type>,
   issues: SemanticIssue[],
+  opts: { strict?: boolean },
 ): Type {
-  const lt = typeExpr(left, scope, issues);
-  const rt = typeExpr(right, scope, issues);
+  const lt = typeExpr(left, scope, issues, opts);
+  const rt = typeExpr(right, scope, issues, opts);
   const numericOps = new Set(['plus', 'minus', 'times', 'divided_by', 'greater_than', 'less_than']);
   const comparisonOps = new Set(['equal_to', 'not_equal_to']);
 
   if (numericOps.has(op)) {
     if (!isNumericish(lt) || !isNumericish(rt)) {
-      issues.push({ message: `Operator ${op} expects numbers` });
+      issues.push({ message: `Operator ${op} expects numbers`, severity: opts.strict ? 'error' : 'warning' });
     }
     return op === 'greater_than' || op === 'less_than' ? 'boolean' : 'number';
   }
