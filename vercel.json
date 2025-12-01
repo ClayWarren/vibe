@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "docs/site/docs/.vitepress/config.ts",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "docs/site/docs/.vitepress/dist"
+      }
+    }
+  ],
+  "buildCommand": "pnpm install --frozen-lockfile=false && cd docs/site && pnpm install --frozen-lockfile=false && pnpm run build",
+  "installCommand": "pnpm install --frozen-lockfile=false",
+  "outputDirectory": "docs/site/docs/.vitepress/dist",
+  "framework": null
+}
