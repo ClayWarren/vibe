@@ -1,0 +1,13 @@
+{
+  "iconDefinitions": {
+    "_vcl": {
+      "iconPath": "./icons/vcl.svg"
+    }
+  },
+  "fileExtensions": {
+    "vcl": "_vcl"
+  },
+  "languageIds": {
+    "vcl": "_vcl"
+  }
+}

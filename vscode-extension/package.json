@@ -31,6 +31,13 @@
         "path": "./syntaxes/vcl.tmLanguage.json"
       }
     ],
+    "iconThemes": [
+      {
+        "id": "vcl-icons",
+        "label": "VCL Icons",
+        "path": "./icon-theme.json"
+      }
+    ],
     "commands": [
       { "command": "vcl.format", "title": "VCL: Format File" },
       { "command": "vcl.lint", "title": "VCL: Lint File" },
