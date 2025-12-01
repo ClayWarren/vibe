@@ -69,14 +69,15 @@ program
   .command('lint')
   .description('Lint a VCL file for syntax/semantic issues')
   .argument('<file>', 'VCL source file')
-  .action(async (file) => {
+  .option('--strict', 'enable stricter checks', false)
+  .action(async (file, options) => {
     const { checkProgram } = await import('../semantic/check.js');
     try {
       const src = readFileSync(file, 'utf8');
       const ast = parse(src);
-      const issues = checkProgram(ast);
+      const issues = checkProgram(ast, { strict: options.strict });
       if (issues.length) {
-        issues.forEach((i: any) => console.error(`lint: ${i.message}`));
+        issues.forEach((i: any) => console.error(`lint (${i.severity || 'warning'}): ${i.message}`));
         process.exitCode = 1;
       }
     } catch (err) {
@@ -89,14 +90,15 @@ program
   .command('check')
   .description('Type-check a VCL file (alias of lint, reserved for stricter rules)')
   .argument('<file>', 'VCL source file')
-  .action(async (file) => {
+  .option('--strict', 'enable strict mode', true)
+  .action(async (file, options) => {
     const { checkProgram } = await import('../semantic/check.js');
     try {
       const src = readFileSync(file, 'utf8');
       const ast = parse(src);
-      const issues = checkProgram(ast);
+      const issues = checkProgram(ast, { strict: options.strict });
       if (issues.length) {
-        issues.forEach((i: any) => console.error(`check: ${i.message}`));
+        issues.forEach((i: any) => console.error(`check (${i.severity || 'warning'}): ${i.message}`));
         process.exitCode = 1;
       }
     } catch (err) {

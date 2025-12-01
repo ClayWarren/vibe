@@ -13,10 +13,10 @@ The `vcl` CLI lives in `dist/cli/index.js` and is wired via Commander. Use `pnpm
   - Interactive shell that echoes a TS preview while you type VCL.
 - `vcl format <file> [--write]`
   - Emits formatted VCL (enforces periods/indent). Writes in-place with `--write`.
-- `vcl lint <file>`
-  - Syntax + basic semantic checks (undefined identifiers, simple type checks, effect misuse).
-- `vcl check <file>`
-  - Alias of `lint`; reserved for stricter rules as the checker grows.
+- `vcl lint <file> [--strict]`
+  - Syntax + basic semantic checks (undefined identifiers in strict mode, simple type checks, effect misuse).
+- `vcl check <file> [--strict]`
+  - Alias of `lint`; defaults to strict=true.
 - `vcl format <file> [--write]`
   - Formats VCL (enforces trailing dots / indent).
 - `vcl test <file> [--event <name>] [--handler <name>] [--data <json>] [--expect <json>]`
