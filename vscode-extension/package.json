@@ -1,0 +1,48 @@
+{
+  "name": "vcl-language-support",
+  "displayName": "VCL Language Support",
+  "description": "Syntax highlighting, formatting, linting, and snippets for Vibe Coding Language (VCL)",
+  "version": "0.1.0",
+  "publisher": "claywarren",
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": ["Programming Languages"],
+  "activationEvents": [
+    "onLanguage:vcl",
+    "onCommand:vcl.format",
+    "onCommand:vcl.lint",
+    "onCommand:vcl.compile"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "vcl",
+        "aliases": ["VCL", "vcl"],
+        "extensions": [".vcl"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "vcl",
+        "scopeName": "source.vcl",
+        "path": "./syntaxes/vcl.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      { "command": "vcl.format", "title": "VCL: Format File" },
+      { "command": "vcl.lint", "title": "VCL: Lint File" },
+      { "command": "vcl.compile", "title": "VCL: Compile to TypeScript" }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ."
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "@types/vscode": "^1.84.0",
+    "typescript": "^5.3.3"
+  }
+}

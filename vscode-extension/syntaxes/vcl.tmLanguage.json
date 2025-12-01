@@ -1,0 +1,38 @@
+{
+  "scopeName": "source.vcl",
+  "patterns": [
+    {
+      "name": "comment.line.number-sign.vcl",
+      "match": "#.*$"
+    },
+    {
+      "name": "keyword.control.vcl",
+      "match": "\\b(define|when|else|ensure|validate|expect|return|stop|let|every)\\b"
+    },
+    {
+      "name": "keyword.operator.vcl",
+      "match": "\\b(fetch|send|store|log|fetch_users|store_value|log_value|ensure_true)\\b"
+    },
+    {
+      "name": "constant.language.vcl",
+      "match": "\\b(true|false|none)\\b"
+    },
+    {
+      "name": "entity.name.function.vcl",
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z0-9_]+)*(?=\\s*:)"
+    },
+    {
+      "name": "string.quoted.double.vcl",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [{ "name": "constant.character.escape.vcl", "match": "\\\\." }]
+    },
+    {
+      "name": "variable.other.readwrite.vcl",
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z0-9_]+)*\\b"
+    }
+  ],
+  "repository": {},
+  "name": "VCL",
+  "injectionSelector": "L:source.vcl"
+}
