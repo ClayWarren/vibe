@@ -34,11 +34,11 @@ export default defineConfig({
           text: 'Reference',
           items: [
             { text: 'Overview', link: '/reference/' },
+            { text: 'CLI', link: '/reference/cli' },
             { text: 'Language Spec', link: '/spec' },
             { text: 'Stdlib', link: '/stdlib' },
             { text: 'Runtime', link: '/runtime' },
             { text: 'VM', link: '/vm' },
-            { text: 'CLI', link: '/cli' },
           ],
         },
       ],
@@ -48,7 +48,7 @@ export default defineConfig({
           items: [
             { text: 'Overview', link: '/guides/' },
             { text: 'Quickstart', link: '/guides/quickstart' },
-            { text: 'Playground', link: '/playground' },
+            { text: 'Playground', link: '/guides/playground' },
             { text: 'Next.js Adapter (coming soon)', link: '/guides/nextjs' },
             { text: 'CLI Workflows', link: '/cli' },
           ],
