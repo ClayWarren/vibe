@@ -29,22 +29,30 @@ export async function install(dep: string, version = 'latest', cwd = process.cwd
   const modDir = path.join(cwd, 'vcl_modules', dep.replace(/[:\/]/g, '_'));
   if (!fs.existsSync(modDir)) fs.mkdirSync(modDir, { recursive: true });
   const main = path.join(modDir, 'main.vcl');
-  if (!fs.existsSync(main)) {
-    // Attempt to fetch tarball or copy from local registry dir
-    const base = registry || process.env.VCL_REGISTRY || 'https://registry.example.com/vcl';
-    try {
-      if (fs.existsSync(base)) {
-        const src = path.join(base, dep);
-        await copyLocalModule(src, modDir);
-      } else {
-        const url = looksLikeUrl(dep) ? dep : `${base}/${dep}-${version}.tgz`;
-        await fetchTarball(url, modDir);
-      }
-    } catch {
-      fs.writeFileSync(main, `# stub module ${dep}\n`, 'utf8');
-    }
+  if (fs.existsSync(main)) {
+    console.log(`Added ${dep}@${version} (already present in vcl_modules)`);
+    return;
   }
-  console.log(`Added ${dep}@${version} to vcl.json and prepared vcl_modules/${dep}/main.vcl`);
+
+  // Attempt to fetch tarball or copy from local registry dir; fail loudly on errors
+  const base = registry || process.env.VCL_REGISTRY || path.join(process.env.HOME || process.cwd(), '.vcl-registry');
+  try {
+    if (fs.existsSync(base)) {
+      const src = path.join(base, dep);
+      await copyLocalModule(src, modDir);
+    } else {
+      const url = looksLikeUrl(dep) ? dep : `${base}/${dep}-${version}.tgz`;
+      await fetchTarball(url, modDir);
+    }
+  } catch (err) {
+    throw new Error(`Failed to install ${dep}@${version} from registry '${base}': ${(err as Error).message}`);
+  }
+
+  if (!fs.existsSync(main)) {
+    throw new Error(`Registry did not provide main.vcl for ${dep}@${version} (looked in ${modDir})`);
+  }
+
+  console.log(`Added ${dep}@${version} to vcl.json and installed into vcl_modules/${dep}/main.vcl`);
 }
 
 function looksLikeUrl(s: string) {

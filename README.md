@@ -46,6 +46,8 @@ pnpm run dev   # opens VCL playground with live compile to TS/Rust
 - Live docs: https://vibe-dun-five-vercel.app
 - See `docs/README.md` for the doc hub and `docs/site` for the VitePress source.
 
+Registry: set `export VCL_REGISTRY=$HOME/.vcl-registry` (default local path used by `vcl install/publish`).
+
 ## Status
 - Tokenizer hardened (indentation, multiline strings, escapes, imports).
 - Parser + linker handle namespaced imports (`foo::bar`), scheduling, and module inlining.
