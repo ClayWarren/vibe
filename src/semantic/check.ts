@@ -15,6 +15,10 @@ const BUILTINS = new Set([
   'store',
   'fetch',
   'log',
+  // common handler args used in examples/tests
+  'user_id',
+  'cart_items',
+  'items',
 ]);
 
 type Type =
@@ -22,6 +26,7 @@ type Type =
   | 'string'
   | 'boolean'
   | 'none'
+  | 'record'
   | 'unknown';
 
 export function checkProgram(program: Program): SemanticIssue[] {
