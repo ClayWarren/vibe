@@ -3,8 +3,8 @@ import { computed, ref } from 'vue'
 import { useData } from 'vitepress'
 
 // Eagerly import all markdown sources as raw text
-// Path: from .vitepress/theme/components -> ../../docs
-const rawSources = import.meta.glob('../../docs/**/*.md', { as: 'raw', eager: true })
+// Path: from .vitepress/theme/components -> ../../../docs
+const rawSources = import.meta.glob('../../../docs/**/*.md', { as: 'raw', eager: true })
 
 const { page } = useData()
 const copying = ref(false)
@@ -13,7 +13,7 @@ const error = ref('')
 
 const markdown = computed(() => {
   const rel = page.value?.relativePath || ''
-  const key = `../../docs/${rel}`
+  const key = `../../../docs/${rel}`
   return rawSources[key] || ''
 })
 
