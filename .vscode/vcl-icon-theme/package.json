@@ -1,7 +1,7 @@
 {
   "name": "vcl-icons-local",
   "displayName": "VCL Icons Local",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -10,7 +10,7 @@
       {
         "id": "vcl-icons-local",
         "label": "VCL Icons Local",
-        "path": "./icons.json"
+        "path": "./icon-theme.json"
       }
     ]
   }
