@@ -8,5 +8,6 @@ A practical, example-first path to learning VCL. The Handbook mirrors the struct
 - [Effects & Runtime](./effects-runtime.md) — `fetch`/`send`/`store`/`log`, handler shapes, async model.
 - [Modules & Registry](./modules.md) — imports, namespacing (`foo::bar`), local registry usage, publish/install.
 - [Tooling & Workflow](./tooling.md) — CLI, formatter/linter, VS Code extension, build/watch loops.
+- [VCL vs TypeScript](./vcl-vs-ts.md) — side-by-side cheatsheet for TS users.
 
 If you’re in a hurry, read Everyday VCL → Effects & Runtime, then skim Modules & Tooling. The Reference section links the full spec and stdlib.

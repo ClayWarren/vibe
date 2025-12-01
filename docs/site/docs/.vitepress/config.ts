@@ -26,6 +26,7 @@ export default defineConfig({
             { text: 'Effects & Runtime', link: '/handbook/effects-runtime' },
             { text: 'Modules & Registry', link: '/handbook/modules' },
             { text: 'Tooling & Workflow', link: '/handbook/tooling' },
+            { text: 'VCL vs TypeScript', link: '/handbook/vcl-vs-ts' },
           ],
         },
       ],
