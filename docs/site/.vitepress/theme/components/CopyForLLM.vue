@@ -35,16 +35,14 @@ async function copy() {
 </script>
 
 <template>
-  <ClientOnly>
-    <div class="copy-llm" role="group" aria-label="Copy page as Markdown for LLMs">
-      <button class="copy-llm__btn" type="button" @click="copy" :disabled="copying || !markdown">
-        <span v-if="!copied">Copy as Markdown for LLMs</span>
-        <span v-else>Copied!</span>
-      </button>
-      <span v-if="!markdown" class="copy-llm__error">Markdown not found for this page.</span>
-      <span v-else-if="error" class="copy-llm__error">{{ error }}</span>
-    </div>
-  </ClientOnly>
+  <div class="copy-llm" role="group" aria-label="Copy page as Markdown for LLMs">
+    <button class="copy-llm__btn" type="button" @click="copy" :disabled="copying || !markdown">
+      <span v-if="!copied">Copy as Markdown for LLMs</span>
+      <span v-else>Copied!</span>
+    </button>
+    <span v-if="!markdown" class="copy-llm__error">Markdown not found for this page.</span>
+    <span v-else-if="error" class="copy-llm__error">{{ error }}</span>
+  </div>
 </template>
 
 <style scoped>
