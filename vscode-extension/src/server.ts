@@ -54,18 +54,29 @@ connection.onDocumentFormatting((params: DocumentFormattingParams): TextEdit[] =
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   const output = runCli(['lint'], textDocument.getText(), textDocument.uri);
+  const src = textDocument.getText();
   const diagnostics = output
     .split('\n')
     .filter(Boolean)
     .map((line) => {
-      // expect format: lint: message (no positions today)
       const msg = line.replace(/^lint:\s*/i, '');
+      // best-effort position: find the first occurrence of the referenced identifier
+      let startOffset = 0;
+      let length = 1;
+      const m = msg.match(/Undefined identifier \"([^\"]+)\"/);
+      if (m) {
+        const name = m[1];
+        const idx = src.indexOf(name);
+        if (idx >= 0) {
+          startOffset = idx;
+          length = name.length;
+        }
+      }
+      const start = textDocument.positionAt(startOffset);
+      const end = textDocument.positionAt(startOffset + length);
       return {
         severity: DiagnosticSeverity.Error,
-        range: {
-          start: textDocument.positionAt(0),
-          end: textDocument.positionAt(0),
-        },
+        range: { start, end },
         message: msg,
         source: 'vcl',
       };
