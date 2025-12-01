@@ -16,11 +16,11 @@ program
   .option('--target <target>', 'ts|rust', 'ts')
   .option('--sourcemap <file>', 'output source map (ts only)')
   .option('--with-stdlib', 'prepend stdlib imports')
-  .action((file, options) => {
+  .action(async (file, options) => {
     const source = readFileSync(file, 'utf8');
     const stdlibImport = options.withStdlib ? 'import stdlib.\n' : '';
     const ast = parse(stdlibImport + source);
-    const { linkProgram } = require('../module/linker.js');
+    const { linkProgram } = await import('../module/linker.js');
     const linked = linkProgram(ast, process.cwd());
     const ir = lowerProgram(linked);
     if (options.target === 'rust') {
@@ -48,8 +48,8 @@ program
   .description('Format a VCL file')
   .argument('<file>', 'VCL source file')
   .option('--write', 'overwrite the file')
-  .action((file, options) => {
-    const { emitVcl } = require('../emitter/vcl.js');
+  .action(async (file, options) => {
+    const { emitVcl } = await import('../emitter/vcl.js');
     const src = readFileSync(file, 'utf8');
     const formatted = emitVcl(parse(src));
     if (options.write) {
@@ -63,8 +63,8 @@ program
   .command('lint')
   .description('Lint a VCL file for syntax/semantic issues')
   .argument('<file>', 'VCL source file')
-  .action((file) => {
-    const { checkProgram } = require('../semantic/check.js');
+  .action(async (file) => {
+    const { checkProgram } = await import('../semantic/check.js');
     try {
       const src = readFileSync(file, 'utf8');
       const ast = parse(src);
@@ -99,7 +99,7 @@ program
   .option('--version <version>', 'version range', 'latest')
   .option('--registry <url>', 'override registry base URL')
   .action(async (name, opts) => {
-    const { install } = require('../pm/index.js');
+    const { install } = await import('../pm/index.js');
     await install(name, opts.version, process.cwd(), opts.registry);
   });
 
@@ -108,8 +108,8 @@ program
   .description('Create vcl.json manifest')
   .argument('<name>', 'project name')
   .option('--version <version>', 'project version', '0.1.0')
-  .action((name, opts) => {
-    const { writeManifest } = require('../pm/index.js');
+  .action(async (name, opts) => {
+    const { writeManifest } = await import('../pm/index.js');
     writeManifest({ name, version: opts.version });
     console.log('Created vcl.json');
   });
@@ -118,8 +118,8 @@ program
   .command('publish')
   .description('Publish current module to a registry directory')
   .option('--registry <dir>', 'registry directory', '.vcl-registry')
-  .action((opts) => {
-    const { publishModule } = require('../module/registry.js');
+  .action(async (opts) => {
+    const { publishModule } = await import('../module/registry.js');
     publishModule(process.cwd(), opts.registry);
   });
 
@@ -129,15 +129,15 @@ program
   .argument('<file>', 'VCL source file')
   .option('--vm', 'use VM execution')
   .option('--event <name>', 'event name to invoke', 'http GET /')
-  .action((file, opts) => {
+  .action(async (file, opts) => {
     const src = readFileSync(file, 'utf8');
     const ast = parse(src);
-    const { linkProgram } = require('../module/linker.js');
+    const { linkProgram } = await import('../module/linker.js');
     const linked = linkProgram(ast, process.cwd());
     if (opts.vm) {
-      const { lowerProgram } = require('../ir/index.js');
-      const { compileIR } = require('../vm/compiler.js');
-      const { runBytecode } = require('../vm/vm.js');
+      const { lowerProgram } = await import('../ir/index.js');
+      const { compileIR } = await import('../vm/compiler.js');
+      const { runBytecode } = await import('../vm/vm.js');
       const bc = compileIR(lowerProgram(linked));
       const res = runBytecode(bc, `on_${opts.event}`, {
         fetch: () => [],
