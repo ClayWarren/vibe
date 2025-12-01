@@ -43,7 +43,8 @@ pnpm run dev   # opens VCL playground with live compile to TS/Rust
 
 ## Docs
 
-- See `docs/README.md` for the doc hub and `docs/site` for the VitePress site scaffold.
+- Live docs: https://vibe-dun-five-vercel.app
+- See `docs/README.md` for the doc hub and `docs/site` for the VitePress source.
 
 ## Status
 - Tokenizer hardened (indentation, multiline strings, escapes, imports).
