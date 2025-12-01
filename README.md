@@ -25,6 +25,10 @@ node dist/cli/index.js compile examples/user_profile.vcl --target ts --with-stdl
 node dist/cli/index.js run examples/webapp.vcl --event "http GET /api/health"
 # Run via VM
 node dist/cli/index.js run examples/webapp.vcl --event "http GET /api/health" --vm
+# Format / lint / check
+node dist/cli/index.js format examples/user_profile.vcl
+node dist/cli/index.js lint examples/webapp.vcl
+node dist/cli/index.js check examples/webapp.vcl
 ```
 
 ## VS Code icon for `.vcl`
