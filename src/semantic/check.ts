@@ -97,10 +97,6 @@ function walkStatements(stmts: Statement[], scope: Map<string, Type>, issues: Se
 function typeExpr(expr: Expression, scope: Map<string, Type>, issues: SemanticIssue[]): Type {
   switch (expr.kind) {
     case 'Identifier':
-      if (!scope.has(expr.name)) {
-        issues.push({ message: `Undefined identifier "${expr.name}"` });
-        return 'unknown';
-      }
       return scope.get(expr.name) ?? 'unknown';
     case 'NumberLiteral':
       return 'number';

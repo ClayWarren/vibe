@@ -24,15 +24,21 @@ export function collectFunctions(ast: Program) {
   const map: Record<string, FunctionDef> = {};
   ast.body.forEach((s: any) => {
     if (s.kind === 'FunctionDef') map[s.name.name] = s as FunctionDef;
+    // Treat FunctionDef as invocable event for convenience: event name matches function name
+    if (s.kind === 'FunctionDef') {
+      (map as any)[`event:${s.name.name}`] = s;
+    }
   });
   return map;
 }
 
 export async function runEvent(ast: Program, eventName: string, ctx: Partial<EvalCtx> & any): Promise<EvalResult> {
-  const handler = collectEvents(ast).find((h) => h.event === eventName);
+  const handler =
+    collectEvents(ast).find((h) => h.event === eventName) ||
+    (collectFunctions(ast) as any)[`event:${eventName}`];
   if (!handler) return { status: 404, body: 'not found' };
   const evalCtx: EvalCtx = {
-    frames: [ctx],
+    frames: [ctx, ctx.data || {}],
     functions: collectFunctions(ast),
     runtime: ctx.runtime || { fetch: ctx.fetch, send: ctx.send, store: ctx.store, log: ctx.log },
     data: ctx.data || {},
@@ -143,8 +149,7 @@ async function evalExpr(expr: Expression, ctx: EvalCtx): Promise<any> {
       const key = expr.target?.name || (expr.target as any) || 'default';
       if (ctx.runtime.store) await ctx.runtime.store(value, key);
       else if (ctx.data) {
-        ctx.data[key] = ctx.data[key] || [];
-        (ctx.data[key] as any[]).push(value);
+        ctx.data[key] = value;
       }
       return undefined;
     }

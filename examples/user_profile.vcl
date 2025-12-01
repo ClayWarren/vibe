@@ -1,5 +1,5 @@
 define get_user_profile:
-  let user_id = 1.
+  ensure user_id.
   let user = fetch user_id.
   ensure user.
   return user.
