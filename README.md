@@ -47,7 +47,7 @@ pnpm run dev   # opens VCL playground with live compile to TS/Rust
 - See `docs/README.md` for the doc hub and `docs/site` for the VitePress source.
 
 Registry: set `export VCL_REGISTRY=$HOME/.vcl-registry` (default local path used by `vcl install/publish`).
-Install CLI via npm (after publish): `npm i -g vcl`.
+Install CLI via npm (after publish): `npm i -g @claywarren/vcl`.
 
 ## Status
 - Tokenizer hardened (indentation, multiline strings, escapes, imports).

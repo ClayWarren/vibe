@@ -1,5 +1,5 @@
 {
-  "name": "vcl",
+  "name": "@claywarren/vcl",
   "version": "0.1.0",
   "description": "Vibe Coding Language compiler and tooling",
   "type": "module",
@@ -23,6 +23,9 @@
   },
   "bin": {
     "vcl": "dist/cli/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "body-parser": "^2.2.1",
