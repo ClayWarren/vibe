@@ -1,0 +1,17 @@
+{
+  "name": "vcl-icons-local",
+  "displayName": "VCL Icons Local",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "contributes": {
+    "iconThemes": [
+      {
+        "id": "vcl-icons-local",
+        "label": "VCL Icons Local",
+        "path": "./icons.json"
+      }
+    ]
+  }
+}

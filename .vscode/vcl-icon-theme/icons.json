@@ -1,0 +1,10 @@
+{
+  "iconDefinitions": {
+    "_vcl": {
+      "iconPath": "./vcl.svg"
+    }
+  },
+  "fileExtensions": {
+    "vcl": "_vcl"
+  }
+}

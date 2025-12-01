@@ -27,6 +27,12 @@ node dist/cli/index.js run examples/webapp.vcl --event "http GET /api/health"
 node dist/cli/index.js run examples/webapp.vcl --event "http GET /api/health" --vm
 ```
 
+## VS Code icon for `.vcl`
+
+- A local icon theme lives in `.vscode/vcl-icon-theme`; no marketplace download needed.
+- Install once from the repo root: `code --install-extension .vscode/vcl-icon-theme`.
+- The workspace sets `workbench.iconTheme` to `vcl-icons-local`, so the VCL icon will appear after install/reload. If it doesn’t, run `⌘⇧P` → “File Icon Theme” → choose “VCL Icons Local”.
+
 ## Web playground
 
 ```bash

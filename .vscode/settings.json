@@ -1,0 +1,6 @@
+{
+  "workbench.iconTheme": "vcl-icons-local",
+  "files.associations": {
+    "*.vcl": "vcl"
+  }
+}
