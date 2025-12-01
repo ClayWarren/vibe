@@ -1,5 +1,7 @@
 import fs from 'fs';
 import path from 'path';
+import https from 'https';
+import { fileURLToPath } from 'url';
 import { fetchTarball, copyLocalModule } from '../module/fetch.js';
 
 export type Manifest = {
@@ -34,7 +36,28 @@ export async function install(dep: string, version = 'latest', cwd = process.cwd
     return;
   }
 
-  // Attempt to fetch tarball or copy from local registry dir; fail loudly on errors
+  // 1) bundled stdlib/modules (like TS ships lib.d.ts)
+  const pkgRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const bundledDir = path.join(pkgRoot, 'vcl_modules', dep);
+  if (fs.existsSync(path.join(bundledDir, 'main.vcl'))) {
+    copyDir(bundledDir, modDir);
+    console.log(`Installed bundled module ${dep} from package contents`);
+    return;
+  }
+
+  // 2) npm registry tarball (TypeScript-style distribution)
+  try {
+    const tarball = await resolveNpmTarball(dep, version);
+    await fetchTarball(tarball, modDir);
+    if (fs.existsSync(main)) {
+      console.log(`Added ${dep}@${version} from npm (${tarball})`);
+      return;
+    }
+  } catch (err) {
+    // fall through to local registry
+  }
+
+  // 3) local/override registry (folder or URL)
   const base = registry || process.env.VCL_REGISTRY || path.join(process.env.HOME || process.cwd(), '.vcl-registry');
   try {
     if (fs.existsSync(base)) {
@@ -57,4 +80,45 @@ export async function install(dep: string, version = 'latest', cwd = process.cwd
 
 function looksLikeUrl(s: string) {
   return s.startsWith('http://') || s.startsWith('https://');
+}
+
+async function resolveNpmTarball(dep: string, version: string): Promise<string> {
+  const npm = process.env.NPM_REGISTRY || 'https://registry.npmjs.org';
+  if (looksLikeUrl(dep)) return dep;
+
+  const metaUrl = `${npm}/${dep.replace(/\//g, '%2f')}`;
+  const meta = await fetchJson(metaUrl);
+  const ver = version === 'latest' ? meta['dist-tags']?.latest : version;
+  const resolved = meta.versions?.[ver]?.dist?.tarball;
+  if (!resolved) throw new Error(`No tarball found for ${dep}@${ver}`);
+  return resolved as string;
+}
+
+function fetchJson(url: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk.toString()));
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch (err) {
+            reject(err);
+          }
+        });
+      })
+      .on('error', reject);
+  });
+}
+
+function copyDir(src: string, dest: string) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src)) {
+    const s = path.join(src, entry);
+    const d = path.join(dest, entry);
+    const stat = fs.statSync(s);
+    if (stat.isDirectory()) copyDir(s, d);
+    else fs.copyFileSync(s, d);
+  }
 }

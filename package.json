@@ -6,6 +6,11 @@
   "engines": {
     "node": ">=20"
   },
+  "files": [
+    "dist/**/*",
+    "vcl_modules/stdlib/**/*",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p .",
     "dev": "ts-node src/repl.ts",
