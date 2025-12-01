@@ -1,5 +1,3 @@
-# Parser-friendly checkout example without helper functions
-
 define on_http_POST_checkout:
   ensure items.
   let cart_items = items.

@@ -1,5 +1,3 @@
-# Parser-friendly user profile example
-
 define get_user_profile:
   let user_id = 1.
   let user = fetch user_id.
