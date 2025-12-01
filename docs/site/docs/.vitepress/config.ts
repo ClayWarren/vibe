@@ -3,6 +3,11 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'VCL',
   description: 'Vibe Coding Language',
+  vite: {
+    ssr: {
+      noExternal: ['vitepress']
+    }
+  },
   themeConfig: {
     nav: [
       { text: 'Docs', link: '/index' },
