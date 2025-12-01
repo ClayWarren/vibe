@@ -3,6 +3,8 @@ import * as path from 'path';
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient/node.js';
 
 let client: LanguageClient | undefined;
+const ICON_THEME = 'vcl-icons';
+const ICON_PROMPT_KEY = 'vcl.iconTheme.prompted';
 
 export function activate(context: vscode.ExtensionContext) {
   const serverModule = context.asAbsolutePath(path.join('out', 'server.js'));
@@ -20,6 +22,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   client = new LanguageClient('vclLanguageServer', 'VCL Language Server', serverOptions, clientOptions);
   client.start();
+
+  maybePromptIconTheme(context);
 
   // Compile command (TS target) remains as an extra convenience
   context.subscriptions.push(
@@ -48,4 +52,21 @@ export function deactivate(): Thenable<void> | undefined {
     return undefined;
   }
   return client.stop();
+}
+
+async function maybePromptIconTheme(context: vscode.ExtensionContext) {
+  const already = context.globalState.get<boolean>(ICON_PROMPT_KEY);
+  if (already) return;
+  const current = vscode.workspace.getConfiguration('workbench').get<string>('iconTheme');
+  if (current === ICON_THEME) {
+    context.globalState.update(ICON_PROMPT_KEY, true);
+    return;
+  }
+  const pick = 'Use VCL Icons';
+  const choice = await vscode.window.showInformationMessage('Enable VCL file icons?', pick, 'Not now');
+  context.globalState.update(ICON_PROMPT_KEY, true);
+  if (choice === pick) {
+    await vscode.workspace.getConfiguration('workbench').update('iconTheme', ICON_THEME, vscode.ConfigurationTarget.Global);
+    vscode.window.showInformationMessage('VCL icons enabled.');
+  }
 }
