@@ -2,6 +2,11 @@
 
 VCL is an indentation-first, English-like language that compiles to TypeScript, Rust, or runs on a lightweight VM. It aims to be the next step beyond TypeScript for AI-native, readable code.
 
+**New doc layout**  
+- Start with the [Handbook](/handbook/) for an examples-first tour (Everyday VCL, Effects, Modules, Tooling).  
+- Dive into [Reference](/reference/) for the spec, stdlib, runtime, VM, and CLI details.  
+- See [Guides](/guides/) for task-oriented workflows (Quickstart, Playground, Next.js adapter stub).
+
 - Deterministic blocks via indent + trailing dots
 - Natural verbs: fetch/send/store/ensure/validate/expect
 - Multiple targets: TS, Rust, WASM stub, VM/interpreter
