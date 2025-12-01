@@ -20,6 +20,23 @@ export function emitTypeScriptLegacy(node: IRNode): string {
   return emitTypeScript(node).code;
 }
 
+// Minimal d.ts emitter: declare each top-level IRLet as an async function
+export function emitTypeDeclarations(node: IRNode): string {
+  if (node.kind !== 'IRProgram') return '';
+  const names: string[] = [];
+  for (const child of node.body) {
+    if (child.kind === 'IRLet') {
+      names.push(child.name);
+    }
+  }
+  const lines = [
+    '// Auto-generated VCL declarations',
+    'export type VclHandler = (...args: any[]) => Promise<any>;',
+    ...names.map((n) => `export function ${n}(...args: any[]): Promise<any>;`),
+  ];
+  return lines.join('\n') + '\n';
+}
+
 function emitNode(
   node: IRNode,
   indent: number,

@@ -15,6 +15,7 @@ program
   .argument('<file>', 'VCL source file')
   .option('--target <target>', 'ts|rust', 'ts')
   .option('--sourcemap <file>', 'output source map (ts only)')
+  .option('--dts <file>', 'emit TypeScript declarations (ts only)')
   .option('--with-stdlib', 'prepend stdlib imports')
   .action(async (file, options) => {
     const source = readFileSync(file, 'utf8');
@@ -29,6 +30,11 @@ program
     } else {
       const { code, map } = emitTypeScript(ir, { withMap: Boolean(options.sourcemap) });
       process.stdout.write(code + '\n');
+      if (options.dts) {
+        const { emitTypeDeclarations } = await import('../transpilers/typescript.js');
+        const dts = emitTypeDeclarations(ir);
+        writeFileSync(options.dts, dts, 'utf8');
+      }
       if (options.sourcemap) {
         writeFileSync(options.sourcemap, JSON.stringify(map, null, 2), 'utf8');
       }
