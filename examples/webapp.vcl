@@ -1,16 +1,17 @@
-use http.
+# VCL example web handlers (parser-friendly names)
 
-when http GET /api/health:
-    return "ok".
+define on_http_GET_api_health:
+  return "ok".
 end.
 
-when http GET /api/users:
-    return users.
+define on_http_GET_api_users:
+  ensure users.
+  return users.
 end.
 
-when http POST /api/users:
-    ensure body.name is not_equal_to none.
-    let user = body.
-    store user into users.
-    return user.
+define on_http_POST_api_users:
+  ensure body.
+  let user = body.
+  store user into users.
+  return user.
 end.

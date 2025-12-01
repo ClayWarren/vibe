@@ -1,21 +1,14 @@
-# Example VCL workflow: checkout flow
+# Parser-friendly checkout example without helper functions
 
-import stdlib.
-
-when http POST /checkout:
-  let cart = fetch cart_items.
-  ensure cart is not_equal_to none.
-  let total = call compute_total with cart.
-  validate total is greater_than 0.
-  send total to notifications.
-  store total into last_order_total.
-  return total.
-end.
-
-define compute_total items:
+define on_http_POST_checkout:
+  ensure items.
+  let cart_items = items.
   let sum = 0.
-  for each price in items:
+  for each price in cart_items:
     let sum = sum plus price.
   end.
+  ensure sum greater_than 0.
+  send sum.
+  store sum into last_order_total.
   return sum.
 end.

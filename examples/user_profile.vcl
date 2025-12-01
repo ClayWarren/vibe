@@ -1,6 +1,8 @@
+# Parser-friendly user profile example
+
 define get_user_profile:
-    ensure user_id is provided.
-    let user = fetch user where id is user_id.
-    if user is none: stop with "user not found".
-    return user.
+  let user_id = 1.
+  let user = fetch user_id.
+  ensure user.
+  return user.
 end.
